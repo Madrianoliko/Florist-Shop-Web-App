@@ -2,10 +2,6 @@
 
 A full-stack florist shop web application built with **Blazor Web App (.NET 9)** and **PostgreSQL**. Covers three core business flows — bouquet shop, event decoration enquiries, and prop rental — plus a complete admin panel.
 
-> **Portfolio project.** Based on the architecture and design of [klimatynakwiaty.pl](https://klimatynakwiaty.pl), a real florist shop built for a client. The fictional business is *Petal & Bloom*, Bristol UK.
->
-> Original app repo: [Florist-Shop-App](https://github.com/Madrianoliko/Florist-Shop-App)
-
 ---
 
 ## ✨ Features
@@ -191,10 +187,8 @@ All tables use snake_case column names. Every domain entity extends `EntityBase`
 
 ---
 
-## 🔗 Related
+## 🔗 Links
 
-- **Live site (original Polish app):** [klimatynakwiaty.pl](https://klimatynakwiaty.pl)
-- **Original repo:** [Florist-Shop-App](https://github.com/Madrianoliko/Florist-Shop-App)
 - **Portfolio:** [adrianmalik.pl](https://adrianmalik.pl) *(coming soon)*
 
 ---
@@ -205,4 +199,4 @@ All tables use snake_case column names. Every domain entity extends `EntityBase`
 
 ---
 
-*Built as a portfolio showcase. The business data (Petal & Bloom, Bristol) is fictional.*
+*Portfolio project. The business data (Petal & Bloom, Bristol) is fictional.*
