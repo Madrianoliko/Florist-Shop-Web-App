@@ -1,0 +1,183 @@
+@page "/rental/reservation"
+@using FloristShop.Web.Modules.Rental.Models
+@using FloristShop.Web.Modules.Rental.Services
+@inject RentalCatalogService Catalog
+@inject RentalReservationService ReservationService
+@inject NavigationManager Nav
+
+@*
+    Prop hire enquiry form. Pure SSR — no @rendermode.
+
+    Flow:
+      GET /rental/reservation  →  empty form with default dates
+      POST (OnValidSubmit)     →  save to database + redirect to confirmation page
+      POST (validation errors) →  re-render with error messages (without reloading data)
+
+    [SupplyParameterFromForm] causes Blazor to populate _form automatically
+    from POSTed form data — BEFORE OnInitializedAsync is called.
+    On GET the property has its default value (new ReservationFormModel()).
+
+    EditForm + DataAnnotationsValidator handles both [Required] etc. attributes
+    and IValidatableObject (cross-field: EndDate >= StartDate).
+*@
+
+<PageTitle>Hire Enquiry - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="rental">Prop Hire</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Hire Enquiry</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-1">Hire Enquiry</h1>
+    <p class="text-muted mb-4">
+        Fill in the form — we will get back to you within 24&nbsp;hours
+        to confirm availability and discuss the details.
+    </p>
+
+    <EditForm Model="@_form" OnValidSubmit="HandleSubmitAsync" method="post" FormName="reservation">
+        <DataAnnotationsValidator />
+
+        <div class="row g-4">
+
+            @* ── Left column: dates ──────────────────────────────────────── *@
+            <div class="col-md-6 col-lg-5">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold">Hire dates</div>
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Collection date <span class="text-danger">*</span>
+                            </label>
+                            <InputDate class="form-control"
+                                       @bind-Value="_form.StartDate"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <ValidationMessage For="@(() => _form.StartDate)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Return date <span class="text-danger">*</span>
+                            </label>
+                            <InputDate class="form-control"
+                                       @bind-Value="_form.EndDate"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <ValidationMessage For="@(() => _form.EndDate)" class="invalid-feedback d-block" />
+                        </div>
+
+                        @if (_catalogItems.Count > 0)
+                        {
+                            <hr />
+                            <p class="small text-muted mb-2">Available props (guide prices):</p>
+                            <ul class="list-unstyled small mb-0">
+                                @foreach (var item in _catalogItems)
+                                {
+                                    <li class="mb-1">
+                                        <strong>@item.Name</strong>
+                                        — @item.PricePerRental.ToString("C", GbCulture) / hire
+                                        (available: @item.TotalQuantity units)
+                                    </li>
+                                }
+                            </ul>
+                        }
+
+                    </div>
+                </div>
+            </div>
+
+            @* ── Right column: contact details + note ───────────────────── *@
+            <div class="col-md-6 col-lg-7">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold">Contact details</div>
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Full name <span class="text-danger">*</span>
+                            </label>
+                            <InputText class="form-control"
+                                       @bind-Value="_form.CustomerName"
+                                       placeholder="Jane Smith"
+                                       autocomplete="name" />
+                            <ValidationMessage For="@(() => _form.CustomerName)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Email address <span class="text-danger">*</span>
+                            </label>
+                            <InputText type="email"
+                                       class="form-control"
+                                       @bind-Value="_form.CustomerEmail"
+                                       placeholder="jane@example.com"
+                                       autocomplete="email" />
+                            <ValidationMessage For="@(() => _form.CustomerEmail)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Phone <span class="text-danger">*</span>
+                            </label>
+                            <InputText type="tel"
+                                       class="form-control"
+                                       @bind-Value="_form.CustomerPhone"
+                                       placeholder="07700 900 123"
+                                       autocomplete="tel" />
+                            <ValidationMessage For="@(() => _form.CustomerPhone)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                What are you interested in? (optional)
+                            </label>
+                            <InputTextArea class="form-control"
+                                           @bind-Value="_form.CustomerNote"
+                                           rows="4"
+                                           placeholder="E.g.: 5 cylinder vases, 2 brass candlesticks — for a 14-person outdoor wedding. Collection in person is fine." />
+                            <div class="form-text">
+                                Describe the props and quantities — it helps us prepare an accurate quote.
+                            </div>
+                            <ValidationMessage For="@(() => _form.CustomerNote)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <ValidationSummary class="alert alert-danger py-2 small" />
+
+                        <button type="submit" class="btn btn-primary w-100 py-2">
+                            Send enquiry
+                        </button>
+
+                        <p class="text-muted small text-center mt-2 mb-0">
+                            The reservation will be confirmed after we contact you by phone.
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private static readonly System.Globalization.CultureInfo GbCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("en-GB");
+
+    [SupplyParameterFromForm(FormName = "reservation")]
+    private ReservationFormModel _form { get; set; } = new();
+
+    private IReadOnlyList<RentalItem> _catalogItems = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _catalogItems = await Catalog.GetActiveCatalogAsync();
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        var reservationNumber = await ReservationService.CreateReservationAsync(_form);
+        Nav.NavigateTo($"/rental/reservation/confirmation/{Uri.EscapeDataString(reservationNumber)}");
+    }
+}

@@ -1,0 +1,123 @@
+@page "/decorations"
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Gallery.Models
+@using FloristShop.Web.Modules.Gallery.Services
+@inject GalleryService GallerySvc
+@inject DictionaryService DictSvc
+
+<PageTitle>Floral Decorations &amp; Gallery - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-4">
+
+    @* ── Header ─────────────────────────────────────────────────── *@
+    <h1 class="mb-1">Floral Decorations</h1>
+    <p class="lead text-muted mb-5">
+        We create stunning decorations for weddings, church ceremonies, and other events.
+        Every project is bespoke — tailored to your vision and venue.
+    </p>
+
+    @* ── How it works ───────────────────────────────────────────── *@
+    <div class="bg-light rounded p-4 mb-4">
+        <h2 class="h5 mb-3">How it works</h2>
+        <div class="row g-3">
+            <div class="col-sm-4 text-center">
+                <div class="fs-3 mb-2">📋</div>
+                <p class="small fw-semibold mb-1">1. Send an enquiry</p>
+                <p class="small text-muted mb-0">Describe your event, date and vision. We'll reply within 24&nbsp;h.</p>
+            </div>
+            <div class="col-sm-4 text-center">
+                <div class="fs-3 mb-2">💬</div>
+                <p class="small fw-semibold mb-1">2. Consultation &amp; quote</p>
+                <p class="small text-muted mb-0">We call, discuss the details, and prepare a personalised quote.</p>
+            </div>
+            <div class="col-sm-4 text-center">
+                <div class="fs-3 mb-2">🌸</div>
+                <p class="small fw-semibold mb-1">3. On the day</p>
+                <p class="small text-muted mb-0">We arrive, dress the venue, and collect afterwards. Stress-free.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center py-3 mb-5">
+        <p class="text-muted mb-3">Questions or ready for a quote?</p>
+        <a href="decorations/inquiry" class="btn btn-primary btn-lg px-5">
+            Send a decoration enquiry
+        </a>
+    </div>
+
+    @* ── Our work ──────────────────────────────────────────────── *@
+    <div id="gallery">
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold">Our Work</h2>
+            <p class="lead text-muted">
+                Every event is unique. Here is a selection of decorations, bouquets, and arrangements
+                we have had the pleasure of creating.
+            </p>
+        </div>
+
+        @if (_photos.Count == 0)
+        {
+            <div class="alert alert-info text-center">
+                Our gallery is being prepared — check back soon!
+            </div>
+        }
+        else
+        {
+            @foreach (var group in _grouped)
+            {
+                <h3 class="h5 text-muted border-bottom pb-2 mb-3 mt-5">
+                    @CategoryLabel(group.Key)
+                </h3>
+
+                <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 g-3 mb-2">
+                    @foreach (var photo in group)
+                    {
+                        <div class="col">
+                            <div class="card h-100 border-0 shadow-sm overflow-hidden">
+                                <a href="@photo.ImagePath"
+                                   class="glightbox"
+                                   data-gallery="gallery"
+                                   data-title="@(photo.Title ?? CategoryLabel(photo.Category))"
+                                   style="display:block;aspect-ratio:4/3;overflow:hidden;">
+                                    <img src="@photo.ImagePath"
+                                         alt="@(photo.Title ?? CategoryLabel(photo.Category))"
+                                         style="width:100%;height:100%;object-fit:cover;transition:transform .2s;"
+                                         onmouseover="this.style.transform='scale(1.03)'"
+                                         onmouseout="this.style.transform='scale(1)'" />
+                                </a>
+                                @if (!string.IsNullOrWhiteSpace(photo.Title))
+                                {
+                                    <div class="card-body p-2">
+                                        <div class="small text-muted text-center">@photo.Title</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+</div>
+
+@code {
+    private List<GalleryPhoto> _photos = [];
+    private IEnumerable<IGrouping<string, GalleryPhoto>> _grouped = [];
+    private Dictionary<string, string> _labelMap = [];
+    private Dictionary<string, int> _sortOrderMap = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _photos = await GallerySvc.GetActiveAsync();
+        var categories = await DictSvc.GetActiveAsync(DictionaryService.Types.GalleryCategory);
+        _labelMap     = categories.ToDictionary(e => e.Key, e => e.Label);
+        _sortOrderMap = categories.ToDictionary(e => e.Key, e => e.SortOrder);
+        _grouped = _photos
+            .GroupBy(p => p.Category)
+            .OrderBy(g => _sortOrderMap.TryGetValue(g.Key, out var o) ? o : 99);
+    }
+
+    private string CategoryLabel(string key) =>
+        _labelMap.TryGetValue(key, out var label) ? label : key;
+}

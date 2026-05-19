@@ -1,0 +1,140 @@
+@page "/admin/catalogue/rental"
+@attribute [Authorize]
+@using System.Globalization
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Rental.Models
+@inject AdminRentalCatalogService CatalogSvc
+@inject DictionaryService DictSvc
+
+<PageTitle>Prop Catalogue - Admin</PageTitle>
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin" class="btn btn-outline-secondary btn-sm">← Admin Panel</a>
+        <h1 class="h4 mb-0">Prop Catalogue</h1>
+        <a href="admin/catalogue/rental/new" class="btn btn-primary btn-sm ms-auto">
+            + Add rekwizyt
+        </a>
+    </div>
+
+    @if (_items.Count == 0)
+    {
+        <div class="alert alert-info">No props. <a href="admin/catalogue/rental/new">Add pierwszy</a>.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:80px">Zdjęcie</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price / wyp.</th>
+                        <th>Szt.</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _items)
+                    {
+                        <tr class="@(item.IsActive ? "" : "opacity-50")">
+                            <td>
+                                @if (item.ImagePaths.Count > 0)
+                                {
+                                    <img src="@item.ImagePaths[0]" alt="@item.Name"
+                                         style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center bg-light rounded"
+                                         style="width:60px;height:60px;font-size:1.5rem;">
+                                        @CategoryEmoji(item.Category)
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@item.Name</div>
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <div class="text-muted small" style="max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                        @item.Description
+                                    </div>
+                                }
+                            </td>
+                            <td class="text-muted small">@CategoryLabel(item.Category)</td>
+                            <td class="fw-semibold">@item.PricePerRental.ToString("C", GbCulture)</td>
+                            <td>@item.TotalQuantity</td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Ukryty</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="admin/catalogue/rental/@item.Id" class="btn btn-outline-primary btn-sm">
+                                        Edit
+                                    </a>
+                                    <form method="post" style="display:inline">
+                                        <AntiforgeryToken />
+                                        <input type="hidden" name="Delete.ItemId" value="@item.Id" />
+                                        <button type="submit"
+                                                class="btn btn-delete btn-sm"
+                                                onclick="return confirm('Na pewno usunac ten rekwizyt?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+    private List<RentalItem> _items = [];
+    private Dictionary<string, string> _labelMap = [];
+
+    [SupplyParameterFromForm]
+    private DeleteForm Delete { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Delete.ItemId.HasValue)
+            await CatalogSvc.DeleteAsync(Delete.ItemId.Value);
+
+        _items = await CatalogSvc.GetAllAsync();
+        _labelMap = await DictSvc.GetLabelMapAsync(DictionaryService.Types.RentalCategory);
+    }
+
+    private string CategoryLabel(string key) =>
+        _labelMap.TryGetValue(key, out var label) ? label : key;
+
+    private static string CategoryEmoji(string c) => c switch
+    {
+        "Vase"         => "🏺",
+        "CandleHolder" => "🕯️",
+        "Arch"         => "🌿",
+        "Lantern"      => "🪔",
+        "TableDecor"   => "🌸",
+        _              => "📦"
+    };
+
+    public class DeleteForm
+    {
+        public Guid? ItemId { get; set; }
+    }
+}

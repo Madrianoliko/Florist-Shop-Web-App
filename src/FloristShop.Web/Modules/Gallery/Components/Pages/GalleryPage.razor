@@ -1,0 +1,79 @@
+@page "/gallery"
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Gallery.Models
+@using FloristShop.Web.Modules.Gallery.Services
+@inject GalleryService GallerySvc
+@inject DictionaryService DictSvc
+
+<PageTitle>Gallery - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-5">
+
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Our Work</h1>
+        <p class="lead text-muted">
+            Every event is unique. Here is a selection of decorations, bouquets, and arrangements
+            we have had the pleasure of creating.
+        </p>
+    </div>
+
+    @if (_photos.Count == 0)
+    {
+        <div class="alert alert-info text-center">
+            Our gallery is being prepared — check back soon!
+        </div>
+    }
+    else
+    {
+        @foreach (var group in _grouped)
+        {
+            <h2 class="h5 text-muted border-bottom pb-2 mb-3 mt-5">
+                @CategoryLabel(group.Key)
+            </h2>
+
+            <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 g-3 mb-2">
+                @foreach (var photo in group)
+                {
+                    <div class="col">
+                        <div class="card h-100 border-0 shadow-sm overflow-hidden">
+                            <img src="@photo.ImagePath"
+                                 alt="@(photo.Title ?? CategoryLabel(photo.Category))"
+                                 class="card-img-top"
+                                 style="height:200px;object-fit:cover;" />
+                            @if (!string.IsNullOrWhiteSpace(photo.Title))
+                            {
+                                <div class="card-body p-2">
+                                    <div class="small text-muted text-center">@photo.Title</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    <hr class="my-5" />
+    <div class="text-center">
+        <p class="text-muted">Interested in decorations for your event?</p>
+        <a href="decorations" class="btn btn-primary me-2">Enquire about decorations</a>
+        <a href="shop" class="btn btn-outline-primary">Order a bouquet</a>
+    </div>
+
+</div>
+
+@code {
+    private List<GalleryPhoto> _photos = [];
+    private IEnumerable<IGrouping<string, GalleryPhoto>> _grouped = [];
+    private Dictionary<string, string> _labelMap = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _photos = await GallerySvc.GetActiveAsync();
+        _labelMap = await DictSvc.GetLabelMapAsync(DictionaryService.Types.GalleryCategory);
+        _grouped = _photos.GroupBy(p => p.Category);
+    }
+
+    private string CategoryLabel(string key) =>
+        _labelMap.TryGetValue(key, out var label) ? label : key;
+}

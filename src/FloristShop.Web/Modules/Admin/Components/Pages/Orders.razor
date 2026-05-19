@@ -1,0 +1,109 @@
+@page "/admin/orders"
+@attribute [Authorize]
+@using System.Globalization
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Shop.Models
+@inject AdminOrderService AdminOrders
+
+<PageTitle>Orders - Admin</PageTitle>
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin" class="btn btn-outline-secondary btn-sm">← Admin Panel</a>
+        <h1 class="h4 mb-0">Orders (shop)</h1>
+    </div>
+
+    @if (_orders.Count == 0)
+    {
+        <div class="alert alert-info">No orders yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Number</th>
+                        <th>Customer</th>
+                        <th>Fulfilment date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Submitted</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in _orders)
+                    {
+                        <tr>
+                            <td class="font-monospace small">@o.OrderNumber</td>
+                            <td>@o.CustomerName</td>
+                            <td>@o.DeliveryDate.ToString("dd/MM/yyyy")</td>
+                            <td class="fw-semibold">@o.TotalPrice.ToString("C", GbCulture)</td>
+                            <td><span class="badge @StatusBadgeClass(o.Status)">@StatusLabel(o.Status)</span></td>
+                            <td><span class="badge @PaymentBadgeClass(o.PaymentStatus)">@PaymentLabel(o.PaymentStatus)</span></td>
+                            <td class="text-muted small">@o.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                            <td>
+                                <a href="admin/orders/@o.Id" class="btn btn-outline-primary btn-sm">
+                                    Details →
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+    private List<Order> _orders = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _orders = await AdminOrders.GetAllOrdersAsync();
+    }
+
+    private static string StatusBadgeClass(OrderStatus s) => s switch
+    {
+        OrderStatus.New            => "bg-warning text-dark",
+        OrderStatus.Confirmed      => "bg-info text-dark",
+        OrderStatus.InPreparation  => "bg-primary",
+        OrderStatus.Ready          => "bg-success",
+        OrderStatus.OutForDelivery => "bg-primary",
+        OrderStatus.Delivered      => "bg-success",
+        OrderStatus.Cancelled      => "bg-danger",
+        _                          => "bg-secondary"
+    };
+
+    private static string StatusLabel(OrderStatus s) => s switch
+    {
+        OrderStatus.New            => "New",
+        OrderStatus.Confirmed      => "Confirmed",
+        OrderStatus.InPreparation  => "In Preparation",
+        OrderStatus.Ready          => "Ready",
+        OrderStatus.OutForDelivery => "Out for Delivery",
+        OrderStatus.Delivered      => "Delivered",
+        OrderStatus.Cancelled      => "Cancelled",
+        _                          => s.ToString()
+    };
+
+    private static string PaymentBadgeClass(PaymentStatus p) => p switch
+    {
+        PaymentStatus.Paid   => "bg-success",
+        PaymentStatus.Unpaid => "bg-warning text-dark",
+        _                    => "bg-secondary"
+    };
+
+    private static string PaymentLabel(PaymentStatus p) => p switch
+    {
+        PaymentStatus.Paid   => "Paid",
+        PaymentStatus.Unpaid => "Unpaid",
+        _                    => p.ToString()
+    };
+}

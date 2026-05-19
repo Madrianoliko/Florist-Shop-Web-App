@@ -1,0 +1,221 @@
+@page "/admin/decorations/{Id:guid}"
+@attribute [Authorize]
+@using System.Globalization
+@using FloristShop.Web.Modules.Admin.Models
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Decoration.Models
+@inject AdminDecorationService AdminDecoration
+@inject NavigationManager Nav
+
+<PageTitle>Zapytanie @(_inquiry?.InquiryNumber ?? Id.ToString()) - Admin</PageTitle>
+
+<div class="container py-4">
+
+    @if (_inquiry is null)
+    {
+        <div class="alert alert-warning">
+            Enquiry not found. <a href="admin/decorations" class="alert-link">Back do listy</a>.
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a href="admin/decorations" class="btn btn-outline-secondary btn-sm">← List</a>
+            <h1 class="h4 mb-0 font-monospace">@_inquiry.InquiryNumber</h1>
+            <span class="badge @StatusBadgeClass(_inquiry.Status)">@StatusLabel(_inquiry.Status)</span>
+        </div>
+
+        <div class="row g-4">
+
+            @* ── Lewa kolumna: szczegóły zapytania ──────────────────────────── *@
+            <div class="col-lg-7">
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Customer details</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Full name</dt>
+                            <dd class="col-sm-8">@_inquiry.CustomerName</dd>
+                            <dt class="col-sm-4">Email</dt>
+                            <dd class="col-sm-8"><a href="mailto:@_inquiry.CustomerEmail">@_inquiry.CustomerEmail</a></dd>
+                            <dt class="col-sm-4">Phone</dt>
+                            <dd class="col-sm-8"><a href="tel:@_inquiry.CustomerPhone">@_inquiry.CustomerPhone</a></dd>
+                            <dt class="col-sm-4">Submitted</dt>
+                            <dd class="col-sm-8">@_inquiry.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Details wydarzenia</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Type</dt>
+                            <dd class="col-sm-8">@EventTypeLabel(_inquiry.EventType)</dd>
+                            <dt class="col-sm-4">Date</dt>
+                            <dd class="col-sm-8">@_inquiry.EventDate.ToString("dd/MM/yyyy")</dd>
+                            <dt class="col-sm-4">Location</dt>
+                            <dd class="col-sm-8">@_inquiry.Location</dd>
+                            @if (_inquiry.BudgetEstimate.HasValue)
+                            {
+                                <dt class="col-sm-4">Budget klienta</dt>
+                                <dd class="col-sm-8">@_inquiry.BudgetEstimate.Value.ToString("C", GbCulture)</dd>
+                            }
+                            @if (_inquiry.FinalPrice.HasValue)
+                            {
+                                <dt class="col-sm-4">Ustalona cena</dt>
+                                <dd class="col-sm-8 fw-semibold text-success">
+                                    @_inquiry.FinalPrice.Value.ToString("C", GbCulture)
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header fw-semibold">Description wizji klienta</div>
+                    <div class="card-body">
+                        <p class="mb-0" style="white-space: pre-wrap;">@_inquiry.Description</p>
+                    </div>
+                </div>
+            </div>
+
+            @* ── Prawa kolumna: akcje admina ─────────────────────────────────── *@
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header fw-semibold">Admin actions</div>
+                    <div class="card-body">
+                        <EditForm Model="@_form"
+                                  OnValidSubmit="HandleSubmitAsync"
+                                  method="post"
+                                  FormName="decoration-update">
+                            <DateAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Status</label>
+                                <InputSelect class="form-select" @bind-Value="_form.Status">
+                                    @foreach (var s in AllStatuses)
+                                    {
+                                        <option value="@s">@StatusLabel(s)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Ustalona cena (zł)</label>
+                                <InputNumber class="form-control" @bind-Value="_form.FinalPrice"
+                                             placeholder="np. 3500" min="0" />
+                                <div class="form-text">Uzupełnij po ustaleniu z klientem.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Admin note</label>
+                                <InputTextArea class="form-control" @bind-Value="_form.AdminNote"
+                                               rows="4"
+                                               placeholder="Notatki z rozmów, kalkulacje, ustalenia — niewidoczne dla klienta." />
+                            </div>
+
+                            @if (_saved)
+                            {
+                                <div class="alert alert-success py-2 mb-3">✓ Changes saved.</div>
+                            }
+
+                            <button type="submit" class="btn btn-primary w-100">Save changes</button>
+                        </EditForm>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_inquiry.AdminNote))
+                {
+                    <div class="card mt-3 border-warning">
+                        <div class="card-header fw-semibold text-warning-emphasis bg-warning-subtle">
+                            Current admin note
+                        </div>
+                        <div class="card-body small" style="white-space: pre-wrap;">@_inquiry.AdminNote</div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+    private static readonly DecorationInquiryStatus[] AllStatuses =
+    [
+        DecorationInquiryStatus.New,
+        DecorationInquiryStatus.InQuoting,
+        DecorationInquiryStatus.QuoteSent,
+        DecorationInquiryStatus.Accepted,
+        DecorationInquiryStatus.Rejected,
+        DecorationInquiryStatus.Completed,
+        DecorationInquiryStatus.Cancelled
+    ];
+
+    [Parameter] public Guid Id { get; set; }
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "decoration-update")]
+    private DecorationUpdateFormModel _form { get; set; } = new();
+
+    private DecorationInquiry? _inquiry;
+    private bool _saved;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _inquiry = await AdminDecoration.GetByIdAsync(Id);
+        _saved = HttpContext.Request.Query.ContainsKey("saved");
+
+        if (HttpContext.Request.Method == "GET" && _inquiry is not null)
+        {
+            _form = new DecorationUpdateFormModel
+            {
+                Status = _inquiry.Status,
+                AdminNote = _inquiry.AdminNote ?? string.Empty,
+                FinalPrice = _inquiry.FinalPrice
+            };
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        await AdminDecoration.UpdateInquiryAsync(Id, _form.Status, _form.AdminNote, _form.FinalPrice);
+        Nav.NavigateTo($"/admin/decorations/{Id}?saved=1");
+    }
+
+    private static string EventTypeLabel(DecorationEventType t) => t switch
+    {
+        DecorationEventType.Wedding     => "Ślub / wesele",
+        DecorationEventType.Church      => "Uroczystość kościelna",
+        DecorationEventType.Anniversary => "Rocznica / jubileusz",
+        DecorationEventType.Funeral     => "Pogrzeb",
+        _                               => "Inne"
+    };
+
+    private static string StatusBadgeClass(DecorationInquiryStatus s) => s switch
+    {
+        DecorationInquiryStatus.New        => "bg-warning text-dark",
+        DecorationInquiryStatus.InQuoting  => "bg-info text-dark",
+        DecorationInquiryStatus.QuoteSent  => "bg-primary",
+        DecorationInquiryStatus.Accepted   => "bg-success",
+        DecorationInquiryStatus.Rejected   => "bg-danger",
+        DecorationInquiryStatus.Completed  => "bg-success",
+        DecorationInquiryStatus.Cancelled  => "bg-secondary",
+        _                                  => "bg-secondary"
+    };
+
+    private static string StatusLabel(DecorationInquiryStatus s) => s switch
+    {
+        DecorationInquiryStatus.New        => "New",
+        DecorationInquiryStatus.InQuoting  => "Quote w toku",
+        DecorationInquiryStatus.QuoteSent  => "Quote wysłana",
+        DecorationInquiryStatus.Accepted   => "Zaakceptowane",
+        DecorationInquiryStatus.Rejected   => "Odrzucone",
+        DecorationInquiryStatus.Completed  => "Completed",
+        DecorationInquiryStatus.Cancelled  => "Cancelled",
+        _                                  => s.ToString()
+    };
+}

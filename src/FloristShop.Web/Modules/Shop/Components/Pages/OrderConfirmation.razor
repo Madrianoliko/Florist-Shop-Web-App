@@ -1,0 +1,40 @@
+@page "/shop/order/confirmation/{OrderNumber}"
+
+@*
+    Order confirmation page — displayed after PRG from the order form.
+    Shows the order number.
+*@
+
+<PageTitle>Order Placed - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+
+            <div class="display-1 mb-3">💐</div>
+
+            <h1 class="h3 mb-2">Order received!</h1>
+            <p class="text-muted mb-4">
+                Thank you for your order. We will be in touch by phone shortly
+                to confirm the details and arrange payment.
+            </p>
+
+            <div class="card border-success mb-4">
+                <div class="card-body py-4">
+                    <div class="text-muted small mb-1">Your order number</div>
+                    <div class="font-monospace fw-bold fs-4 text-success">@OrderNumber</div>
+                    <div class="text-muted small mt-1">Save this — you will need it to check your order status.</div>
+                </div>
+            </div>
+
+            <a href="shop" class="btn btn-outline-secondary">
+                Back to catalogue
+            </a>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string OrderNumber { get; set; } = string.Empty;
+}

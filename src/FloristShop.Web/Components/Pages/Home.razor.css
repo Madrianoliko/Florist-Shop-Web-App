@@ -1,0 +1,457 @@
+/* ============================================================
+   Home.razor.css — Klimaty na kwiaty, strona główna
+   ============================================================ */
+
+/* ═══ HERO ═══ */
+.kw-hero {
+    background: #FFFFFF;
+    overflow: hidden;
+}
+
+.kw-hero-box {
+    background-image: url('/images/kwiaciarnia.jpg');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+    height: 580px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kw-hero-box::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 3px;
+}
+
+.kw-hero-box-content {
+    position: relative;
+    z-index: 1;
+    padding: 2.5rem 2rem;
+    max-width: 680px;
+    text-align: center;
+}
+
+.kw-hero-cta {
+    justify-content: center;
+}
+
+.kw-hero-box .kw-label {
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 3px;
+}
+
+.kw-hero-title {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 2.8rem;
+    color: #FDFAF9;
+    line-height: 1.15;
+    margin: 0 0 1.25rem;
+}
+
+.kw-hero-title em {
+    font-style: italic;
+    color: #F5E8E9;
+}
+
+.kw-hero-text {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.75;
+    margin: 0 0 1.75rem;
+}
+
+.kw-hero-cta {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.kw-btn-white {
+    background: #FFFFFF;
+    color: #C4A0A6;
+    font-family: -apple-system, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.7rem 1.6rem;
+    border-radius: 2px;
+    transition: background 0.15s;
+}
+
+.kw-btn-white:hover {
+    background: #FAF0F1;
+    color: #A07880;
+}
+
+.kw-btn-outline-white {
+    background: transparent;
+    color: #FDFAF9;
+    font-family: -apple-system, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.7rem 1.6rem;
+    border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.5);
+    transition: background 0.15s;
+}
+
+.kw-btn-outline-white:hover {
+    background: rgba(255,255,255,0.12);
+    color: #FDFAF9;
+}
+
+
+/* ═══ FEATURES ═══ */
+.kw-feature-icon {
+    width: 52px;
+    height: 52px;
+    border: 1px solid #EDE8E3;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    color: #C4A0A6;
+}
+
+.kw-feature-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    color: #3A3230;
+    margin-bottom: 0.4rem;
+}
+
+.kw-feature-text {
+    font-size: 0.85rem;
+    color: #8A807C;
+    line-height: 1.65;
+    margin: 0;
+}
+
+/* ═══ OFERTA ═══ */
+.kw-offer-card {
+    border: 1px solid #EDE8E3;
+    border-radius: 3px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s;
+}
+
+.kw-offer-card:hover {
+    box-shadow: 0 4px 20px rgba(196, 160, 166, 0.15);
+}
+
+.kw-offer-photo {
+    height: 260px;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    padding: 1rem;
+    position: relative;
+}
+
+
+.kw-offer-label {
+    font-family: -apple-system, sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #A09894;
+    background: rgba(255,255,255,0.85);
+    padding: 4px 10px;
+    border-radius: 2px;
+}
+
+.kw-offer-body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.kw-offer-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #3A3230;
+    margin: 0 0 0.6rem;
+}
+
+.kw-offer-text {
+    font-size: 0.875rem;
+    color: #6A6460;
+    line-height: 1.65;
+    flex: 1;
+    margin: 0 0 1.25rem;
+}
+
+.kw-offer-link {
+    font-family: -apple-system, sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    color: #C4A0A6;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #EFE5E6;
+    padding-bottom: 2px;
+    align-self: flex-start;
+    transition: color 0.15s;
+}
+
+.kw-offer-link:hover {
+    color: #A07880;
+}
+
+/* ═══ O NAS ═══ */
+.kw-about-photos {
+    position: relative;
+    height: 480px;
+}
+
+.kw-about-photo-main {
+    width: 75%;
+    height: 420px;
+    object-fit: cover;
+    object-position: center top;
+    border-radius: 3px;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.kw-about-photo-accent {
+    width: 55%;
+    height: 280px;
+    object-fit: cover;
+    object-position: center top;
+    border-radius: 3px;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border: 4px solid #FAF7F4;
+}
+
+.kw-about-text {
+    font-size: 0.925rem;
+    color: #5A5450;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+.kw-about-rating {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.kw-stars {
+    color: #C9A86C;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+}
+
+.kw-about-rating-text {
+    font-size: 0.8rem;
+    color: #8A807C;
+}
+
+/* ═══ OPINIE ═══ */
+.kw-review-card {
+    background: #FFFFFF;
+    border: 1px solid #EDE8E3;
+    border-radius: 4px;
+    padding: 1.5rem;
+    height: 100%;
+}
+
+.kw-review-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.kw-review-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #FFFFFF;
+    flex-shrink: 0;
+}
+
+.kw-review-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #3A3230;
+    margin: 0 0 2px;
+}
+
+.kw-stars-sm {
+    color: #C9A86C;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.kw-review-text {
+    font-size: 0.85rem;
+    color: #6A6460;
+    line-height: 1.7;
+    margin: 0;
+    font-style: italic;
+}
+
+.kw-more-reviews {
+    font-family: -apple-system, sans-serif;
+    font-size: 0.8rem;
+    color: #C4A0A6;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+}
+
+.kw-more-reviews:hover {
+    color: #A07880;
+    text-decoration: underline;
+}
+
+/* ═══ KONTAKT ═══ */
+.kw-contact-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.kw-contact-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.kw-contact-icon {
+    color: #C4A0A6;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.kw-contact-list strong {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #A09894;
+    margin-bottom: 3px;
+}
+
+.kw-contact-list span,
+.kw-contact-list a {
+    font-size: 0.925rem;
+    color: #4A4440;
+    line-height: 1.55;
+    text-decoration: none;
+}
+
+.kw-contact-list a:hover {
+    color: #C4A0A6;
+}
+
+.kw-map-wrap {
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #EDE8E3;
+}
+
+/* ═══ FOOTER ═══ */
+.kw-footer {
+    background: #3A3230;
+    padding: 2.5rem 1.5rem;
+    margin-top: 0;
+}
+
+.kw-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.kw-footer-links {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.kw-footer-links a {
+    font-family: -apple-system, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #6A5E5C;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.kw-footer-links a:hover {
+    color: #C4A0A6;
+}
+
+.kw-footer-copy {
+    font-size: 0.75rem;
+    color: #4A3E3C;
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+    .kw-hero-box {
+        height: 440px;
+    }
+
+    .kw-hero-title {
+        font-size: 2.1rem;
+    }
+
+    .kw-about-photos {
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+
+    .kw-about-photo-main {
+        height: 260px;
+    }
+
+    .kw-about-photo-accent {
+        height: 180px;
+    }
+
+    .kw-footer-inner {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .kw-footer-links {
+        justify-content: center;
+    }
+}

@@ -1,0 +1,270 @@
+@page "/admin/orders/{Id:guid}"
+@attribute [Authorize]
+@using System.Globalization
+@using FloristShop.Web.Modules.Admin.Models
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Shop.Models
+@inject AdminOrderService AdminOrders
+@inject NavigationManager Nav
+
+<PageTitle>Order @(_order?.OrderNumber ?? Id.ToString()) - Admin</PageTitle>
+
+<div class="container py-4">
+
+    @if (_order is null)
+    {
+        <div class="alert alert-warning">
+            Order not found. <a href="admin/orders" class="alert-link">Back to list</a>.
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a href="admin/orders" class="btn btn-outline-secondary btn-sm">← List</a>
+            <h1 class="h4 mb-0 font-monospace">@_order.OrderNumber</h1>
+            <span class="badge @StatusBadgeClass(_order.Status)">@StatusLabel(_order.Status)</span>
+            <span class="badge @PaymentBadgeClass(_order.PaymentStatus)">@PaymentLabel(_order.PaymentStatus)</span>
+        </div>
+
+        <div class="row g-4">
+
+            @* ── Left column: order details ────────────────────────────── *@
+            <div class="col-lg-7">
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Customer details</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Full name</dt>
+                            <dd class="col-sm-8">@_order.CustomerName</dd>
+                            <dt class="col-sm-4">Email</dt>
+                            <dd class="col-sm-8"><a href="mailto:@_order.CustomerEmail">@_order.CustomerEmail</a></dd>
+                            <dt class="col-sm-4">Phone</dt>
+                            <dd class="col-sm-8"><a href="tel:@_order.CustomerPhone">@_order.CustomerPhone</a></dd>
+                            <dt class="col-sm-4">Submitted</dt>
+                            <dd class="col-sm-8">@_order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Delivery</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Method</dt>
+                            <dd class="col-sm-8">@DeliveryMethodLabel(_order.DeliveryMethod)</dd>
+                            <dt class="col-sm-4">Fulfilment date</dt>
+                            <dd class="col-sm-8 fw-semibold">@_order.DeliveryDate.ToString("dd/MM/yyyy")</dd>
+                            @if (!string.IsNullOrWhiteSpace(_order.DeliveryAddress))
+                            {
+                                <dt class="col-sm-4">Address</dt>
+                                <dd class="col-sm-8">@_order.DeliveryAddress</dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Order items</div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Bouquet</th>
+                                    <th class="text-end">Qty</th>
+                                    <th class="text-end pe-3">Unit price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in _order.Items)
+                                {
+                                    <tr>
+                                        <td class="ps-3">@item.BouquetNameSnapshot</td>
+                                        <td class="text-end">@item.Quantity</td>
+                                        <td class="text-end pe-3">@item.UnitPriceSnapshot.ToString("C", GbCulture)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="2" class="ps-3 text-end">Subtotal:</th>
+                                    <td class="text-end pe-3">@_order.Subtotal.ToString("C", GbCulture)</td>
+                                </tr>
+                                <tr>
+                                    <th colspan="2" class="ps-3 text-end">Delivery:</th>
+                                    <td class="text-end pe-3">@_order.DeliveryFee.ToString("C", GbCulture)</td>
+                                </tr>
+                                <tr>
+                                    <th colspan="2" class="ps-3 text-end fw-bold">Total:</th>
+                                    <td class="text-end pe-3 fw-bold text-success">@_order.TotalPrice.ToString("C", GbCulture)</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_order.CustomerNote))
+                {
+                    <div class="card border-info">
+                        <div class="card-header fw-semibold text-info-emphasis bg-info-subtle">
+                            Customer note
+                        </div>
+                        <div class="card-body small" style="white-space: pre-wrap;">@_order.CustomerNote</div>
+                    </div>
+                }
+            </div>
+
+            @* ── Right column: admin actions ───────────────────────────── *@
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header fw-semibold">Admin actions</div>
+                    <div class="card-body">
+                        <EditForm Model="@_form"
+                                  OnValidSubmit="HandleSubmitAsync"
+                                  method="post"
+                                  FormName="order-update">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Order status</label>
+                                <InputSelect class="form-select" @bind-Value="_form.Status">
+                                    @foreach (var s in AllStatuses)
+                                    {
+                                        <option value="@s">@StatusLabel(s)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Payment status</label>
+                                <InputSelect class="form-select" @bind-Value="_form.PaymentStatus">
+                                    <option value="@PaymentStatus.Unpaid">Unpaid</option>
+                                    <option value="@PaymentStatus.Paid">Paid ✓</option>
+                                </InputSelect>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Admin note</label>
+                                <InputTextArea class="form-control" @bind-Value="_form.AdminNote"
+                                               rows="4"
+                                               placeholder="Phone notes, payment info, changes — not visible to the customer." />
+                            </div>
+
+                            @if (_saved)
+                            {
+                                <div class="alert alert-success py-2 mb-3">✓ Changes saved.</div>
+                            }
+
+                            <button type="submit" class="btn btn-primary w-100">Save changes</button>
+                        </EditForm>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_order.AdminNote))
+                {
+                    <div class="card mt-3 border-warning">
+                        <div class="card-header fw-semibold text-warning-emphasis bg-warning-subtle">
+                            Current admin note
+                        </div>
+                        <div class="card-body small" style="white-space: pre-wrap;">@_order.AdminNote</div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+    private static readonly OrderStatus[] AllStatuses =
+    [
+        OrderStatus.New,
+        OrderStatus.Confirmed,
+        OrderStatus.InPreparation,
+        OrderStatus.Ready,
+        OrderStatus.OutForDelivery,
+        OrderStatus.Delivered,
+        OrderStatus.Cancelled
+    ];
+
+    [Parameter] public Guid Id { get; set; }
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "order-update")]
+    private OrderUpdateFormModel _form { get; set; } = new();
+
+    private Order? _order;
+    private bool _saved;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _order = await AdminOrders.GetByIdAsync(Id);
+        _saved = HttpContext.Request.Query.ContainsKey("saved");
+
+        if (HttpContext.Request.Method == "GET" && _order is not null)
+        {
+            _form = new OrderUpdateFormModel
+            {
+                Status        = _order.Status,
+                PaymentStatus = _order.PaymentStatus,
+                AdminNote     = _order.AdminNote ?? string.Empty
+            };
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        await AdminOrders.UpdateOrderAsync(Id, _form.Status, _form.PaymentStatus, _form.AdminNote);
+        Nav.NavigateTo($"/admin/orders/{Id}?saved=1");
+    }
+
+    private static string DeliveryMethodLabel(DeliveryMethod m) => m switch
+    {
+        DeliveryMethod.Pickup        => "Collect in store",
+        DeliveryMethod.LocalDelivery => "Local delivery",
+        DeliveryMethod.Courier       => "Courier",
+        _                            => m.ToString()
+    };
+
+    private static string StatusBadgeClass(OrderStatus s) => s switch
+    {
+        OrderStatus.New            => "bg-warning text-dark",
+        OrderStatus.Confirmed      => "bg-info text-dark",
+        OrderStatus.InPreparation  => "bg-primary",
+        OrderStatus.Ready          => "bg-success",
+        OrderStatus.OutForDelivery => "bg-primary",
+        OrderStatus.Delivered      => "bg-success",
+        OrderStatus.Cancelled      => "bg-danger",
+        _                          => "bg-secondary"
+    };
+
+    private static string StatusLabel(OrderStatus s) => s switch
+    {
+        OrderStatus.New            => "New",
+        OrderStatus.Confirmed      => "Confirmed",
+        OrderStatus.InPreparation  => "In Preparation",
+        OrderStatus.Ready          => "Ready",
+        OrderStatus.OutForDelivery => "Out for Delivery",
+        OrderStatus.Delivered      => "Delivered",
+        OrderStatus.Cancelled      => "Cancelled",
+        _                          => s.ToString()
+    };
+
+    private static string PaymentBadgeClass(PaymentStatus p) => p switch
+    {
+        PaymentStatus.Paid   => "bg-success",
+        PaymentStatus.Unpaid => "bg-warning text-dark",
+        _                    => "bg-secondary"
+    };
+
+    private static string PaymentLabel(PaymentStatus p) => p switch
+    {
+        PaymentStatus.Paid   => "Paid",
+        PaymentStatus.Unpaid => "Unpaid",
+        _                    => p.ToString()
+    };
+}

@@ -1,0 +1,16 @@
+@* Root-level _Imports.razor — covers ALL .razor files in the project (Components/ and Modules/).
+   Blazor loads _Imports.razor hierarchically from the component folder up to the project root.
+   Duplicate @using directives from Components/_Imports.razor are harmless — compiler ignores them. *@
+
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using FloristShop.Web
+@using FloristShop.Web.Components

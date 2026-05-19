@@ -1,0 +1,66 @@
+@*
+    Top navigation — horizontal, sticky.
+    Layout: [left links] [logo centre] [right links] on desktop.
+    On mobile: Bootstrap hamburger collapse.
+*@
+
+<header class="kw-navbar">
+    <div class="kw-navbar-inner">
+
+        @* Left side nav *@
+        <nav class="kw-nav-side d-none d-lg-flex">
+            <NavLink class="kw-nav-link" href="shop">Shop</NavLink>
+            <NavLink class="kw-nav-link" href="rental">Rental</NavLink>
+            <NavLink class="kw-nav-link" href="decorations">Decorations</NavLink>
+        </nav>
+
+        @* Centre logo *@
+        <a href="/" class="kw-nav-brand">
+            <img src="images/logobeztla.png" alt="Petal &amp; Bloom" class="kw-brand-logo" />
+        </a>
+
+        @* Right side nav *@
+        <nav class="kw-nav-side d-none d-lg-flex">
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink class="kw-nav-link kw-nav-link-admin kw-nav-link-icon" href="admin" title="Admin Panel">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="8" r="4"/>
+                            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                        </svg>
+                    </NavLink>
+                </Authorized>
+            </AuthorizeView>
+        </nav>
+
+        @* Hamburger — mobile only *@
+        <button class="kw-hamburger d-lg-none"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#kw-mobile-nav"
+                aria-controls="kw-mobile-nav"
+                aria-expanded="false"
+                aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+    </div>
+
+    @* Mobile menu *@
+    <div class="collapse kw-mobile-nav" id="kw-mobile-nav">
+        <nav class="kw-mobile-nav-links">
+            <NavLink class="kw-mobile-link" href="shop">Bouquet Shop</NavLink>
+            <NavLink class="kw-mobile-link" href="rental">Prop Rental</NavLink>
+            <NavLink class="kw-mobile-link" href="decorations">Decorations</NavLink>
+            <NavLink class="kw-mobile-link" href="gallery">Gallery</NavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink class="kw-mobile-link" href="admin">⚙ Admin Panel</NavLink>
+                    <NavLink class="kw-mobile-link" href="logout">Log out</NavLink>
+                </Authorized>
+            </AuthorizeView>
+        </nav>
+    </div>
+</header>

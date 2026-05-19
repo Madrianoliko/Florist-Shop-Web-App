@@ -1,0 +1,142 @@
+@page "/shop"
+@using System.Globalization
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Shop.Models
+@using FloristShop.Web.Modules.Shop.Services
+@inject BouquetCatalogService Catalog
+@inject DictionaryService DictSvc
+
+@*
+    Bouquet catalogue — public page.
+    Pure SSR: templates loaded once per GET request, no interactivity.
+*@
+
+<PageTitle>Bouquet Shop - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-5">
+
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Our Bouquets</h1>
+        <p class="lead text-muted">
+            Every bouquet is crafted by hand from the freshest flowers.
+            Choose the design that catches your eye and place your order.
+        </p>
+        <a href="shop/order" class="btn btn-primary btn-lg mt-2">
+            Order a bouquet
+        </a>
+    </div>
+
+    @if (_templates.Count == 0)
+    {
+        <div class="alert alert-info text-center">
+            Our catalogue is being prepared — check back soon!
+        </div>
+    }
+    else
+    {
+        @* Group by category for readability *@
+        @foreach (var group in _grouped)
+        {
+            <h2 class="h5 text-muted border-bottom pb-2 mb-3 mt-5">
+                @CategoryLabel(group.Key)
+            </h2>
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4 mb-2">
+                @foreach (var t in group)
+                {
+                    <div class="col">
+                        <div class="card h-100 shadow-sm">
+                            <div style="aspect-ratio:3/4;overflow:hidden;background:#f5f0eb;">
+                                @if (t.ImagePaths.Count > 0)
+                                {
+                                    <img src="@t.ImagePaths[0]" alt="@t.Name"
+                                         style="width:100%;height:100%;object-fit:cover;object-position:center top;" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center h-100"
+                                         style="font-size:3rem;">
+                                        @CategoryEmoji(t.Category)
+                                    </div>
+                                }
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">@t.Name</h5>
+                                @if (!string.IsNullOrWhiteSpace(t.Description))
+                                {
+                                    <p class="card-text text-muted small flex-grow-1">@t.Description</p>
+                                }
+                                <div class="mt-auto pt-3 d-flex align-items-center justify-content-between">
+                                    <span class="fw-bold fs-5 text-success">
+                                        @t.BasePrice.ToString("C", GbCulture)
+                                    </span>
+                                    <a href="shop/order?templateId=@t.Id"
+                                       class="btn btn-outline-primary btn-sm">
+                                        Order this bouquet
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    <hr class="my-5" />
+
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="fs-1">🌸</div>
+            <h5>Fresh flowers every day</h5>
+            <p class="text-muted small">Every order is a new, hand-crafted bouquet made from the freshest blooms.</p>
+        </div>
+        <div class="col-md-4">
+            <div class="fs-1">🚚</div>
+            <h5>Delivery &amp; collection</h5>
+            <p class="text-muted small">Collect in store or order local delivery. We also ship via courier.</p>
+        </div>
+        <div class="col-md-4">
+            <div class="fs-1">💬</div>
+            <h5>Personalisation</h5>
+            <p class="text-muted small">Let us know your wishes in the form — colours, a card, special requests.</p>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+    private List<BouquetTemplate> _templates = [];
+    private IEnumerable<IGrouping<string, BouquetTemplate>> _grouped = [];
+    private Dictionary<string, string> _labelMap = [];
+    private Dictionary<string, int> _sortOrderMap = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _templates = await Catalog.GetActiveCatalogAsync();
+
+        var categories = await DictSvc.GetActiveAsync(DictionaryService.Types.BouquetCategory);
+        _labelMap     = categories.ToDictionary(e => e.Key, e => e.Label);
+        _sortOrderMap = categories.ToDictionary(e => e.Key, e => e.SortOrder);
+
+        _grouped = _templates
+            .GroupBy(t => t.Category)
+            .OrderBy(g => _sortOrderMap.TryGetValue(g.Key, out var order) ? order : 99);
+    }
+
+    private string CategoryLabel(string key) =>
+        _labelMap.TryGetValue(key, out var label) ? label : key;
+
+    private static string CategoryEmoji(string c) => c switch
+    {
+        "Wedding"     => "💍",
+        "Anniversary" => "🥂",
+        "Birthday"    => "🎂",
+        "Sympathy"    => "🕊️",
+        "Romantic"    => "❤️",
+        "Everyday"    => "🌻",
+        _             => "💐"
+    };
+}

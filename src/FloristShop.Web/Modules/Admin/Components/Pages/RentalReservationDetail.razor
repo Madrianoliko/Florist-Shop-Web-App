@@ -1,0 +1,279 @@
+@page "/admin/reservations/{Id:guid}"
+@attribute [Authorize]
+@using System.Globalization
+@using FloristShop.Web.Modules.Admin.Models
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Rental.Models
+@inject AdminRentalService AdminRental
+@inject NavigationManager Nav
+
+@*
+    Details rezerwacji + formularz zmiany statusu i notatki admina.
+
+    Przepływ:
+      GET /admin/reservations/{id}  →  załaduj dane, wyświetl + formularz edycji
+      POST (OnValidSubmit)        →  zapisz zmiany → redirect na tę samą stronę (PRG)
+
+    Formularz edycji jest oddzielny od danych wyświetlania — EditForm.Model to
+    mały StatusUpdateModel, nie cała encja RentalReservation.
+*@
+
+<PageTitle>Reservation @(_reservation?.ReservationNumber ?? Id.ToString()) - Admin</PageTitle>
+
+<div class="container py-4">
+
+    @if (_reservation is null)
+    {
+        <div class="alert alert-warning">
+            Reservation nie istnieje lub została usunięta.
+            <a href="admin/reservations" class="alert-link">Back do listy</a>.
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a href="admin/reservations" class="btn btn-outline-secondary btn-sm">← List</a>
+            <h1 class="h4 mb-0 font-monospace">@_reservation.ReservationNumber</h1>
+            <span class="badge @StatusBadgeClass(_reservation.Status)">
+                @StatusLabel(_reservation.Status)
+            </span>
+        </div>
+
+        <div class="row g-4">
+
+            @* ── Lewa kolumna: dane rezerwacji (read-only) ──────────────────── *@
+            <div class="col-lg-7">
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Customer details</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Full name</dt>
+                            <dd class="col-sm-8">@_reservation.CustomerName</dd>
+
+                            <dt class="col-sm-4">Email</dt>
+                            <dd class="col-sm-8">
+                                <a href="mailto:@_reservation.CustomerEmail">@_reservation.CustomerEmail</a>
+                            </dd>
+
+                            <dt class="col-sm-4">Phone</dt>
+                            <dd class="col-sm-8">
+                                <a href="tel:@_reservation.CustomerPhone">@_reservation.CustomerPhone</a>
+                            </dd>
+
+                            <dt class="col-sm-4">Submitted</dt>
+                            <dd class="col-sm-8">
+                                @_reservation.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Date i szczegóły</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Odbiór</dt>
+                            <dd class="col-sm-8">@_reservation.StartDate.ToString("dd/MM/yyyy")</dd>
+
+                            <dt class="col-sm-4">Zwrot</dt>
+                            <dd class="col-sm-8">@_reservation.EndDate.ToString("dd/MM/yyyy")</dd>
+
+                            <dt class="col-sm-4">Note klienta</dt>
+                            <dd class="col-sm-8">
+                                @if (string.IsNullOrWhiteSpace(_reservation.CustomerNote))
+                                {
+                                    <span class="text-muted fst-italic">brak</span>
+                                }
+                                else
+                                {
+                                    <span>@_reservation.CustomerNote</span>
+                                }
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @if (_reservation.Items.Count > 0)
+                {
+                    <div class="card">
+                        <div class="card-header fw-semibold">Pozycje rezerwacji</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Rekwizyt</th>
+                                        <th class="text-end">Qty</th>
+                                        <th class="text-end">Price/units</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in _reservation.Items)
+                                    {
+                                        <tr>
+                                            <td>@(item.RentalItem?.Name ?? "—")</td>
+                                            <td class="text-end">@item.Quantity</td>
+                                            <td class="text-end">@item.UnitPriceSnapshot.ToString("C", GbCulture)</td>
+                                            <td class="text-end">@((item.UnitPriceSnapshot * item.Quantity).ToString("C", GbCulture))</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light fw-semibold">
+                                    <tr>
+                                        <td colspan="3" class="text-end">Total:</td>
+                                        <td class="text-end">@_reservation.TotalPrice.ToString("C", GbCulture)</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+            @* ── Prawa kolumna: edycja statusu i notatki ────────────────────── *@
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header fw-semibold">Admin actions</div>
+                    <div class="card-body">
+
+                        <EditForm Model="@_form"
+                                  OnValidSubmit="HandleSubmitAsync"
+                                  method="post"
+                                  FormName="reservation-update">
+                            <DateAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Status rezerwacji</label>
+                                <InputSelect class="form-select" @bind-Value="_form.Status">
+                                    @foreach (var status in AllStatuses)
+                                    {
+                                        <option value="@status">@StatusLabel(status)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Admin note</label>
+                                <InputTextArea class="form-control"
+                                               @bind-Value="_form.AdminNote"
+                                               rows="4"
+                                               placeholder="Wewnętrzna notatka — niewidoczna dla klienta." />
+                                <div class="form-text">Widoczna tylko w panelu admina.</div>
+                            </div>
+
+                            @if (_saved)
+                            {
+                                <div class="alert alert-success py-2 mb-3">
+                                    ✓ Changes saved.
+                                </div>
+                            }
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                Save changes
+                            </button>
+                        </EditForm>
+
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_reservation.AdminNote))
+                {
+                    <div class="card mt-3 border-warning">
+                        <div class="card-header fw-semibold text-warning-emphasis bg-warning-subtle">
+                            Current admin note
+                        </div>
+                        <div class="card-body small">
+                            @_reservation.AdminNote
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+    // Wszystkie statusy w kolejności cyklu życia — do <select>
+    private static readonly RentalReservationStatus[] AllStatuses =
+    [
+        RentalReservationStatus.Pending,
+        RentalReservationStatus.Confirmed,
+        RentalReservationStatus.Issued,
+        RentalReservationStatus.Returned,
+        RentalReservationStatus.Cancelled
+    ];
+
+    [Parameter]
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Model formularza edycji — mały DTO, NIE cała encja.
+    /// [SupplyParameterFromForm] wypełnia go z POST. Na GET = inicjalizujemy
+    /// ręcznie w OnInitializedAsync z danych pobranych z bazy.
+    /// </summary>
+    [SupplyParameterFromForm(FormName = "reservation-update")]
+    private ReservationUpdateFormModel _form { get; set; } = new();
+
+    private RentalReservation? _reservation;
+    private bool _saved;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reservation = await AdminRental.GetByIdAsync(Id);
+
+        // Sprawdź query string — redirect po zapisie dorzuca ?saved=1
+        _saved = HttpContext.Request.Query.ContainsKey("saved");
+
+        // Inicjalizuj formularz tylko na GET.
+        // Na POST Blazor wypełnia [SupplyParameterFromForm] PRZED OnInitializedAsync,
+        // więc _form już ma wartości od użytkownika — nie nadpisujemy ich danymi z bazy.
+        if (HttpContext.Request.Method == "GET" && _reservation is not null)
+        {
+            _form = new ReservationUpdateFormModel
+            {
+                Status = _reservation.Status,
+                AdminNote = _reservation.AdminNote ?? string.Empty
+            };
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        await AdminRental.UpdateReservationAsync(Id, _form.Status, _form.AdminNote);
+
+        // POST-Redirect-GET: redirect na tę samą stronę żeby odświeżyć dane
+        // i uniknąć problemu z ponownym POST przy F5.
+        Nav.NavigateTo($"/admin/reservations/{Id}?saved=1");
+    }
+
+    // Kolory badge — zduplikowane z listy (docelowo: shared helper)
+    private static string StatusBadgeClass(RentalReservationStatus status) => status switch
+    {
+        RentalReservationStatus.Pending   => "bg-warning text-dark",
+        RentalReservationStatus.Confirmed => "bg-info text-dark",
+        RentalReservationStatus.Issued    => "bg-primary",
+        RentalReservationStatus.Returned  => "bg-success",
+        RentalReservationStatus.Cancelled => "bg-danger",
+        _                                 => "bg-secondary"
+    };
+
+    private static string StatusLabel(RentalReservationStatus status) => status switch
+    {
+        RentalReservationStatus.Pending   => "Oczekuje",
+        RentalReservationStatus.Confirmed => "Potwierdzona",
+        RentalReservationStatus.Issued    => "Wydana",
+        RentalReservationStatus.Returned  => "Zwrócona",
+        RentalReservationStatus.Cancelled => "Anulowana",
+        _                                 => status.ToString()
+    };
+}

@@ -1,0 +1,21 @@
+@inject NavigationManager NavigationManager
+
+@*
+    Helper component — called in the <NotAuthorized> section of AuthorizeRouteView,
+    redirects to the login page preserving the returnUrl.
+
+    After logging in, Login.razor reads ReturnUrl from the query string and returns to the original page.
+*@
+
+@code {
+    protected override void OnInitialized()
+    {
+        // ToBaseRelativePath converts the full URL to a path relative to the app,
+        // e.g. "https://localhost:5001/admin/orders" -> "admin/orders".
+        var returnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+        NavigationManager.NavigateTo(
+            $"login?returnUrl={Uri.EscapeDataString(returnUrl)}",
+            forceLoad: true);
+    }
+}

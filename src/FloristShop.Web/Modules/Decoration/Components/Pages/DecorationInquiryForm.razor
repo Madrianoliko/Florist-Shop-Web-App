@@ -1,0 +1,135 @@
+@page "/decorations/inquiry"
+@using FloristShop.Web.Modules.Decoration.Models
+@using FloristShop.Web.Modules.Decoration.Services
+@inject DecorationInquiryService InquiryService
+@inject NavigationManager Nav
+
+<PageTitle>Decoration Enquiry - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="decorations">Decorations</a></li>
+            <li class="breadcrumb-item active">Enquiry</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-1">Decoration Enquiry</h1>
+    <p class="text-muted mb-4">
+        Tell us about your event — we will call back within 24&nbsp;hours to discuss the details and prepare a quote.
+    </p>
+
+    <EditForm Model="@_form" OnValidSubmit="HandleSubmitAsync" method="post" FormName="decoration-inquiry">
+        <DataAnnotationsValidator />
+
+        <div class="row g-4">
+
+            @* ── Left column: event details ──────────────────────────────── *@
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold">Event details</div>
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">Event type <span class="text-danger">*</span></label>
+                            <InputSelect class="form-select" @bind-Value="_form.EventType">
+                                <option value="@DecorationEventType.Wedding">Wedding</option>
+                                <option value="@DecorationEventType.Church">Church ceremony (christening, first communion…)</option>
+                                <option value="@DecorationEventType.Anniversary">Anniversary / milestone</option>
+                                <option value="@DecorationEventType.Funeral">Funeral</option>
+                                <option value="@DecorationEventType.Other">Other</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _form.EventType)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Event date <span class="text-danger">*</span></label>
+                            <InputDate class="form-control" @bind-Value="_form.EventDate"
+                                       min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                            <ValidationMessage For="@(() => _form.EventDate)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Venue / location <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_form.Location"
+                                       placeholder="e.g. Bristol, venue name or address" />
+                            <ValidationMessage For="@(() => _form.Location)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Your vision <span class="text-danger">*</span>
+                            </label>
+                            <InputTextArea class="form-control" @bind-Value="_form.Description" rows="5"
+                                           placeholder="Describe your expectations: decoration style, colours, preferred flowers, guest count, what needs decorating (tables, altar, arches…)." />
+                            <div class="form-text">The more detail you provide, the more accurate the quote.</div>
+                            <ValidationMessage For="@(() => _form.Description)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Approximate budget (£, optional)</label>
+                            <InputNumber class="form-control" @bind-Value="_form.BudgetEstimate"
+                                         placeholder="e.g. 800" min="0" />
+                            <div class="form-text">Helps us tailor the proposal to your needs.</div>
+                            <ValidationMessage For="@(() => _form.BudgetEstimate)" class="invalid-feedback d-block" />
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            @* ── Right column: contact details ────────────────────────────── *@
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold">Contact details</div>
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">Full name <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_form.CustomerName"
+                                       placeholder="Jane Smith" autocomplete="name" />
+                            <ValidationMessage For="@(() => _form.CustomerName)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email address <span class="text-danger">*</span></label>
+                            <InputText type="email" class="form-control" @bind-Value="_form.CustomerEmail"
+                                       placeholder="jane@example.com" autocomplete="email" />
+                            <ValidationMessage For="@(() => _form.CustomerEmail)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Phone <span class="text-danger">*</span></label>
+                            <InputText type="tel" class="form-control" @bind-Value="_form.CustomerPhone"
+                                       placeholder="07700 900 123" autocomplete="tel" />
+                            <ValidationMessage For="@(() => _form.CustomerPhone)" class="invalid-feedback d-block" />
+                        </div>
+
+                        <ValidationSummary class="alert alert-danger py-2 small" />
+
+                        <button type="submit" class="btn btn-primary w-100 py-2">
+                            Send enquiry
+                        </button>
+
+                        <p class="text-muted small text-center mt-2 mb-0">
+                            We will call or email within 24&nbsp;hours.
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "decoration-inquiry")]
+    private DecorationInquiryFormModel _form { get; set; } = new();
+
+    private async Task HandleSubmitAsync()
+    {
+        var number = await InquiryService.CreateInquiryAsync(_form);
+        Nav.NavigateTo($"/decorations/inquiry/confirmation/{Uri.EscapeDataString(number)}");
+    }
+}

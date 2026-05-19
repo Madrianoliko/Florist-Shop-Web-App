@@ -1,0 +1,51 @@
+## .gitignore for FloristShop.Web — Blazor / ASP.NET Core / PostgreSQL
+
+# Build outputs
+[Oo]bj/
+[Bb]in/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+
+# Environment & secrets — NEVER commit these
+appsettings.Production.json
+appsettings.Staging.json
+.env
+.env.*
+secrets.json
+
+# Uploaded user content — large binary files, not source code
+src/FloristShop.Web/wwwroot/uploads/
+
+# Logs
+logs/
+*.log
+
+# Test results
+TestResults/
+coverage/
+
+# Docker
+.dockerignore

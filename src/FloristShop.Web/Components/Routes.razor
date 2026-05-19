@@ -1,0 +1,25 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using FloristShop.Web.Components.Pages.Account
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        @* AuthorizeRouteView instead of plain RouteView — interprets [Authorize] on pages.
+           A page without [Authorize] works as before. A page with [Authorize] (when not logged in)
+           renders the <NotAuthorized> section. *@
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                @if (context.User.Identity?.IsAuthenticated != true)
+                {
+                    @* Anonymous — redirect to /login with returnUrl. *@
+                    <RedirectToLogin />
+                }
+                else
+                {
+                    @* Logged in but no permission (e.g. user without Admin role on [Authorize(Roles="Admin")] page). *@
+                    <p role="alert">You do not have permission to view this page.</p>
+                }
+            </NotAuthorized>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>

@@ -1,0 +1,88 @@
+@page "/rental"
+@using System.Globalization
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Rental.Models
+@using FloristShop.Web.Modules.Rental.Services
+@inject RentalCatalogService Catalog
+@inject DictionaryService DictSvc
+
+<PageTitle>Prop Hire - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-5">
+
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Prop Hire</h1>
+        <p class="lead text-muted">
+            We hire decorative props for weddings, celebrations, and photo shoots.
+            Browse our catalogue and send an enquiry — we will call you back.
+        </p>
+    </div>
+
+    @if (_items.Count == 0)
+    {
+        <div class="alert alert-info text-center">
+            Our catalogue is currently empty. Please check back soon.
+        </div>
+    }
+    else
+    {
+        <div class="row mb-4">
+            @foreach (var item in _items)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        @if (item.ImagePaths.Count > 0)
+                        {
+                            <img src="@item.ImagePaths[0]" alt="@item.Name" class="card-img-top"
+                                 style="height:180px;object-fit:cover;" />
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Name</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@CategoryLabel(item.Category)</h6>
+
+                            @if (!string.IsNullOrWhiteSpace(item.Description))
+                            {
+                                <p class="card-text">@item.Description</p>
+                            }
+
+                            <p class="card-text">
+                                <strong>@item.PricePerRental.ToString("C", GbCulture)</strong>
+                                <span class="text-muted">/ hire</span>
+                            </p>
+
+                            <p class="card-text small text-muted mb-0">
+                                Available: @item.TotalQuantity units
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="text-center py-3 border-top">
+            <p class="text-muted mb-3">
+                Interested in hiring? Send an enquiry — we will call back to confirm availability.
+            </p>
+            <a href="rental/reservation" class="btn btn-primary btn-lg px-5">
+                Send a hire enquiry
+            </a>
+        </div>
+    }
+
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+    private IReadOnlyList<RentalItem> _items = [];
+    private Dictionary<string, string> _labelMap = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _items = await Catalog.GetActiveCatalogAsync();
+        _labelMap = await DictSvc.GetLabelMapAsync(DictionaryService.Types.RentalCategory);
+    }
+
+    private string CategoryLabel(string key) =>
+        _labelMap.TryGetValue(key, out var label) ? label : key;
+}

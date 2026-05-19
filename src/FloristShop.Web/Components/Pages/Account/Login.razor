@@ -1,0 +1,117 @@
+@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using FloristShop.Web.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<AppUser> SignInManager
+@inject NavigationManager Navigation
+
+@*
+    Login — STATIC SSR page (no @rendermode).
+    Reason: SignInManager.PasswordSignInAsync uses HttpContext.SignInAsync,
+    which only works during a normal request/response HTTP cycle — NOT in an
+    interactive component (WebSocket has no control over cookie response headers).
+
+    How the form works in Blazor Web App SSR:
+    - EditForm with method="post" + FormName generates an HTML form.
+    - [SupplyParameterFromForm] binds POST data to properties.
+    - Submit re-renders the page on the server and calls OnValidSubmit.
+*@
+
+<PageTitle>Login - Petal &amp; Bloom</PageTitle>
+
+<div class="kw-login-wrap">
+    <div class="kw-login-card">
+
+        <div class="kw-login-header">
+            <p class="kw-label mb-2">Admin Panel</p>
+            <h1 class="kw-login-title">Log In</h1>
+        </div>
+
+        <EditForm Model="Input" method="post" OnValidSubmit="HandleLogin" FormName="login">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="Input.Email" autocomplete="username" />
+                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="Input.Password" autocomplete="current-password" />
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+
+            <div class="form-check mb-4">
+                <InputCheckbox id="remember" class="form-check-input" @bind-Value="Input.RememberMe" />
+                <label class="form-check-label" for="remember">Remember me</label>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger mb-3" role="alert">@_errorMessage</div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100">Log In</button>
+        </EditForm>
+
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginInputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? _errorMessage;
+
+    private async Task HandleLogin()
+    {
+        // lockoutOnFailure: true — Identity increments AccessFailedCount and locks the account
+        // after exceeding MaxFailedAccessAttempts (configured in Program.cs to 5).
+        var result = await SignInManager.PasswordSignInAsync(
+            Input.Email,
+            Input.Password,
+            Input.RememberMe,
+            lockoutOnFailure: true);
+
+        if (result.Succeeded)
+        {
+            // forceLoad: true — forces a full reload so the auth cookie is immediately visible.
+            Navigation.NavigateTo(ReturnUrl ?? "/", forceLoad: true);
+            return;
+        }
+
+        if (result.IsLockedOut)
+        {
+            _errorMessage = "Account temporarily locked (too many failed attempts). Please try again in 15 minutes.";
+            return;
+        }
+
+        if (result.IsNotAllowed)
+        {
+            _errorMessage = "Login is not permitted for this account.";
+            return;
+        }
+
+        // Default — incorrect email or password.
+        // We don't reveal which one was wrong (whether the email exists or the password is wrong).
+        // This is intentional — an attacker should not know whether the email is in the database.
+        _errorMessage = "Invalid email or password.";
+    }
+
+    public class LoginInputModel
+    {
+        [Required(ErrorMessage = "Please enter your email address.")]
+        [EmailAddress(ErrorMessage = "Invalid email address.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please enter your password.")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; }
+    }
+}

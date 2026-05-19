@@ -1,0 +1,66 @@
+@page "/rental/reservation/confirmation/{ReservationNumber}"
+
+@*
+    Hire enquiry confirmation page.
+    Displayed after a successful form submission (POST-Redirect-GET pattern).
+*@
+
+<PageTitle>Enquiry Received - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <div class="card border-success">
+                <div class="card-body text-center py-5">
+
+                    <div class="display-1 text-success mb-3" aria-hidden="true">✓</div>
+
+                    <h1 class="h3 mb-2">Enquiry received!</h1>
+
+                    <p class="text-muted mb-4">
+                        Your prop hire enquiry has been registered.
+                        We will be in touch within 24&nbsp;hours.
+                    </p>
+
+                    <div class="bg-light rounded p-3 mb-4">
+                        <p class="small text-muted mb-1">Your enquiry number:</p>
+                        <p class="fs-4 fw-bold font-monospace mb-0 text-primary">
+                            @ReservationNumber
+                        </p>
+                    </div>
+
+                    <p class="small text-muted mb-4">
+                        Save this number — you can quote it by phone or email
+                        so we can find your enquiry quickly.
+                    </p>
+
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                        <a href="rental" class="btn btn-outline-secondary">
+                            Back to catalogue
+                        </a>
+                        <a href="/" class="btn btn-outline-secondary">
+                            Home
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="mt-4 p-3 bg-light rounded small">
+                <p class="fw-semibold mb-2">What happens next?</p>
+                <ol class="mb-0 ps-3">
+                    <li class="mb-1">We will call or email to confirm availability and the price.</li>
+                    <li class="mb-1">Once confirmed, we will arrange a collection time.</li>
+                    <li>Payment on collection.</li>
+                </ol>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string ReservationNumber { get; set; } = string.Empty;
+}

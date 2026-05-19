@@ -1,0 +1,225 @@
+@page "/admin/dictionaries/{TypeKey}"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using FloristShop.Web.Modules.Dictionary.Models
+@using FloristShop.Web.Modules.Dictionary.Services
+@inject DictionaryService DictSvc
+@inject NavigationManager Nav
+
+@*
+    Zarządzanie wpisami jednego słownika (np. rental_category).
+    SSR + PRG — brak interaktywności, wystarczy dla prostej listy z formularzem.
+*@
+
+<PageTitle>Dictionary: @TypeLabel - Admin</PageTitle>
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin" class="btn btn-outline-secondary btn-sm">← Admin Panel</a>
+        <h1 class="h4 mb-0">Dictionary: @TypeLabel</h1>
+    </div>
+
+    @* Lista wpisów *@
+    @if (_entries.Count == 0)
+    {
+        <div class="alert alert-info mb-4">No entries w tym słowniku.</div>
+    }
+    else
+    {
+        <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Key (Key)</th>
+                        <th>Label (Label)</th>
+                        <th>Sort order</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in _entries)
+                    {
+                        <tr class="@(e.IsActive ? "" : "opacity-50")">
+                            <td class="font-monospace small text-muted">@e.Key</td>
+                            <td class="fw-semibold">@e.Label</td>
+                            <td>@e.SortOrder</td>
+                            <td>
+                                @if (e.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Ukryty</span>
+                                }
+                            </td>
+                            <td>
+                                @* Formularz edycji inline *@
+                                <button class="btn btn-outline-primary btn-sm"
+                                        @onclick="() => StartEdit(e)">
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                        @if (_editingId == e.Id)
+                        {
+                            <tr class="table-warning">
+                                <td colspan="5">
+                                    <EditForm Model="@_editForm" OnValidSubmit="SaveEditAsync" class="d-flex gap-2 align-items-end flex-wrap p-2">
+                                        <DateAnnotationsValidator />
+                                        <div>
+                                            <label class="form-label small fw-semibold mb-1">Label</label>
+                                            <InputText class="form-control form-control-sm" @bind-Value="_editForm.Label" style="min-width:180px;" />
+                                        </div>
+                                        <div>
+                                            <label class="form-label small fw-semibold mb-1">Sort order</label>
+                                            <InputNumber class="form-control form-control-sm" @bind-Value="_editForm.SortOrder" style="width:80px;" />
+                                        </div>
+                                        <div class="form-check mt-3">
+                                            <InputCheckbox class="form-check-input" @bind-Value="_editForm.IsActive" id="editActive" />
+                                            <label class="form-check-label small" for="editActive">Active</label>
+                                        </div>
+                                        <button type="submit" class="btn btn-success btn-sm">Save</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+                                    </EditForm>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @* Formularz dodawania nowego wpisu *@
+    <div class="card">
+        <div class="card-header fw-semibold">Add nowy wpis</div>
+        <div class="card-body">
+            <EditForm Model="@_addForm" OnValidSubmit="AddEntryAsync">
+                <DateAnnotationsValidator />
+                <div class="row g-3 align-items-end">
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold">Key (Key) <span class="text-danger">*</span></label>
+                        <InputText class="form-control" @bind-Value="_addForm.Key"
+                                   placeholder="np. Girlanda" />
+                        <div class="form-text">Stabilny identyfikator — nie zmieniaj po zapisaniu.</div>
+                        <ValidationMessage For="@(() => _addForm.Key)" class="text-danger small" />
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Label (Label) <span class="text-danger">*</span></label>
+                        <InputText class="form-control" @bind-Value="_addForm.Label"
+                                   placeholder="np. Girlanda kwiatowa" />
+                        <ValidationMessage For="@(() => _addForm.Label)" class="text-danger small" />
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold">Sort order</label>
+                        <InputNumber class="form-control" @bind-Value="_addForm.SortOrder" />
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="submit" class="btn btn-primary w-100">Add</button>
+                    </div>
+                </div>
+                @if (_addSuccess)
+                {
+                    <div class="alert alert-success py-2 mt-3">✓ Dodano wpis.</div>
+                }
+                @if (!string.IsNullOrEmpty(_addError))
+                {
+                    <div class="alert alert-danger py-2 mt-3">@_addError</div>
+                }
+            </EditForm>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public string TypeKey { get; set; } = string.Empty;
+
+    private List<DictionaryEntry> _entries = [];
+    private int? _editingId;
+    private EditFormModel _editForm = new();
+    private AddFormModel _addForm = new();
+    private bool _addSuccess;
+    private string? _addError;
+
+    private string TypeLabel => TypeKey switch
+    {
+        DictionaryService.Types.RentalCategory  => "Prop Categories",
+        DictionaryService.Types.BouquetCategory => "Bouquet Categories",
+        DictionaryService.Types.GalleryCategory => "Gallery Categories",
+        _                                       => TypeKey
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _entries = await DictSvc.GetAllAsync(TypeKey);
+    }
+
+    private void StartEdit(DictionaryEntry e)
+    {
+        _editingId = e.Id;
+        _editForm = new EditFormModel
+        {
+            Label     = e.Label,
+            SortOrder = e.SortOrder,
+            IsActive  = e.IsActive
+        };
+    }
+
+    private void CancelEdit() => _editingId = null;
+
+    private async Task SaveEditAsync()
+    {
+        await DictSvc.UpdateAsync(_editingId!.Value, _editForm.Label, _editForm.SortOrder, _editForm.IsActive);
+        _editingId = null;
+        await LoadAsync();
+    }
+
+    private async Task AddEntryAsync()
+    {
+        _addSuccess = false;
+        _addError = null;
+        try
+        {
+            await DictSvc.CreateAsync(TypeKey, _addForm.Key, _addForm.Label, _addForm.SortOrder);
+            _addSuccess = true;
+            _addForm = new AddFormModel();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _addError = ex.Message.Contains("unique") || ex.Message.Contains("duplicate")
+                ? $"Key '{_addForm.Key}' już istnieje w tym słowniku."
+                : $"Błąd: {ex.Message}";
+        }
+    }
+
+    private class EditFormModel
+    {
+        [System.ComponentModel.DateAnnotations.Required]
+        public string Label { get; set; } = string.Empty;
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private class AddFormModel
+    {
+        [System.ComponentModel.DateAnnotations.Required(ErrorMessage = "Podaj klucz.")]
+        [System.ComponentModel.DateAnnotations.MaxLength(100)]
+        public string Key { get; set; } = string.Empty;
+
+        [System.ComponentModel.DateAnnotations.Required(ErrorMessage = "Podaj etykietę.")]
+        [System.ComponentModel.DateAnnotations.MaxLength(200)]
+        public string Label { get; set; } = string.Empty;
+
+        public int SortOrder { get; set; }
+    }
+}

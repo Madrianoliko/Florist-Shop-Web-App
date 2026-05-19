@@ -1,0 +1,265 @@
+@page "/admin/catalogue/rental/new"
+@page "/admin/catalogue/rental/{Id:guid}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using FloristShop.Web.Infrastructure
+@using FloristShop.Web.Modules.Admin.Models
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Dictionary.Models
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Rental.Models
+@inject AdminRentalCatalogService CatalogSvc
+@inject DictionaryService DictSvc
+@inject FileUploadService FileUpload
+@inject NavigationManager Nav
+
+<PageTitle>@(_isNew ? "Nowy rekwizyt" : "Edit rekwizyt") - Admin</PageTitle>
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin/catalogue/rental" class="btn btn-outline-secondary btn-sm">← List rekwizytów</a>
+        <h1 class="h4 mb-0">@(_isNew ? "Nowy rekwizyt" : $"Edit: {_form.Name}")</h1>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header fw-semibold">Dane rekwizytu</div>
+                <div class="card-body">
+                    <EditForm Model="@_form" OnValidSubmit="HandleSaveAsync">
+                        <DateAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_form.Name"
+                                       placeholder="np. Wazon cylindryczny szklany 40cm" />
+                            <ValidationMessage For="@(() => _form.Name)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description</label>
+                            <InputTextArea class="form-control" @bind-Value="_form.Description"
+                                           rows="3"
+                                           placeholder="Materiał, wymiary, styl, zastosowanie..." />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <InputSelect class="form-select" @bind-Value="_form.Category">
+                                    @foreach (var cat in _categories)
+                                    {
+                                        <option value="@cat.Key">@cat.Label</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label fw-semibold">Price / hire (zł) <span class="text-danger">*</span></label>
+                                <InputNumber class="form-control" @bind-Value="_form.PricePerRental"
+                                             placeholder="np. 50" min="0.01" />
+                                <ValidationMessage For="@(() => _form.PricePerRental)" class="text-danger small" />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Qty sztuk w magazynie <span class="text-danger">*</span></label>
+                            <InputNumber class="form-control" style="max-width:120px;"
+                                         @bind-Value="_form.TotalQuantity" min="1" />
+                            <ValidationMessage For="@(() => _form.TotalQuantity)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="_form.IsActive" id="isActive" />
+                                <label class="form-check-label" for="isActive">
+                                    Widoczny w katalogu
+                                </label>
+                            </div>
+                            <div class="form-text">Odznacz żeby tymczasowo ukryć (np. rekwizyt na naprawie).</div>
+                        </div>
+
+                        @if (_saved)
+                        {
+                            <div class="alert alert-success py-2 mb-3">✓ Zapisano pomyślnie.</div>
+                        }
+                        @if (!string.IsNullOrEmpty(_saveError))
+                        {
+                            <div class="alert alert-danger py-2 mb-3">@_saveError</div>
+                        }
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" disabled="@_saving">
+                                @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Save
+                            </button>
+                            <a href="admin/catalogue/rental" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header fw-semibold">Photos</div>
+                <div class="card-body">
+
+                    @if (_imagePaths.Count > 0)
+                    {
+                        <div class="row g-2 mb-3">
+                            @foreach (var path in _imagePaths.ToList())
+                            {
+                                <div class="col-6 position-relative">
+                                    <img src="@path" alt="zdjęcie rekwizytu"
+                                         class="img-fluid rounded"
+                                         style="width:100%;height:120px;object-fit:cover;" />
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 py-0 px-1"
+                                            @onclick="() => RemovePhoto(path)"
+                                            title="Delete zdjęcie">
+                                        ✕
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-3">No photos. Add zdjęcia poniżej.</p>
+                    }
+
+                    <label class="form-label fw-semibold">Add zdjęcia</label>
+                    <InputFile OnChange="HandlePhotoUpload"
+                               accept=".jpg,.jpeg,.png,.webp"
+                               multiple
+                               class="form-control mb-2" />
+                    <div class="form-text">JPG, PNG, WebP — max 8 MB każde.</div>
+
+                    @if (_uploading)
+                    {
+                        <div class="mt-2 text-muted small">
+                            <span class="spinner-border spinner-border-sm me-1"></span> Wgrywanie...
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_uploadError))
+                    {
+                        <div class="alert alert-danger py-2 mt-2 small">@_uploadError</div>
+                    }
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private RentalItemFormModel _form = new();
+    private List<string> _imagePaths = [];
+    private List<DictionaryEntry> _categories = [];
+
+    private bool _isNew => !Id.HasValue;
+    private bool _saving;
+    private bool _saved;
+    private string? _saveError;
+    private bool _uploading;
+    private string? _uploadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await DictSvc.GetActiveAsync(DictionaryService.Types.RentalCategory);
+
+        if (!_isNew)
+        {
+            var item = await CatalogSvc.GetByIdAsync(Id!.Value);
+            if (item is null)
+            {
+                Nav.NavigateTo("/admin/catalogue/rental");
+                return;
+            }
+            _form = new RentalItemFormModel
+            {
+                Name           = item.Name,
+                Description    = item.Description,
+                Category       = item.Category,
+                PricePerRental = item.PricePerRental,
+                TotalQuantity  = item.TotalQuantity,
+                IsActive       = item.IsActive
+            };
+            _imagePaths = [..item.ImagePaths];
+        }
+        else if (_categories.Count > 0)
+        {
+            _form.Category = _categories[0].Key;
+        }
+    }
+
+    private async Task HandleSaveAsync()
+    {
+        _saving = true;
+        _saved = false;
+        _saveError = null;
+
+        try
+        {
+            if (_isNew)
+            {
+                var newId = await CatalogSvc.CreateAsync(
+                    _form.Name, _form.Description, _form.Category,
+                    _form.PricePerRental, _form.TotalQuantity, _form.IsActive, _imagePaths);
+                Nav.NavigateTo($"/admin/catalogue/rental/{newId}");
+            }
+            else
+            {
+                await CatalogSvc.UpdateAsync(
+                    Id!.Value, _form.Name, _form.Description, _form.Category,
+                    _form.PricePerRental, _form.TotalQuantity, _form.IsActive, _imagePaths);
+                _saved = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _saveError = $"Błąd zapisu: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task HandlePhotoUpload(InputFileChangeEventArgs e)
+    {
+        _uploading = true;
+        _uploadError = null;
+
+        try
+        {
+            foreach (var file in e.GetMultipleFiles(10))
+            {
+                var path = await FileUpload.SaveAsync(file, "rental");
+                _imagePaths.Add(path);
+            }
+        }
+        catch (Exception ex)
+        {
+            _uploadError = ex.Message;
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private void RemovePhoto(string path)
+    {
+        FileUpload.Delete(path);
+        _imagePaths.Remove(path);
+    }
+
+}

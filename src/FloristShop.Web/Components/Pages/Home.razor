@@ -1,0 +1,365 @@
+@page "/"
+@*
+    Home page — one-page landing.
+    Pure SSR: no @rendermode required, no interactivity.
+
+    Sections:
+    1. Hero          — background image + headline
+    2. Why us        — 4 icons with values
+    3. Offer         — 3 cards (Bouquets, Decorations, Rental)
+    4. About us      — Sophie and James, photos + text
+    5. Reviews       — 3 featured Google reviews
+    6. Contact       — address, phone, hours + map
+*@
+
+<PageTitle>Petal &amp; Bloom — Florist &amp; Event Decorations, Bristol</PageTitle>
+<HeadContent>
+    <meta name="description" content="Petal &amp; Bloom — florist and event decorations in Bristol, UK. Bouquets for every occasion, wedding and event decorations, prop hire. Tel. +44 117 496 0320." />
+</HeadContent>
+
+@* ═══════════════════════════════════════════════════════════
+   SECTION 1 — HERO
+   ═══════════════════════════════════════════════════════════ *@
+<section class="kw-hero">
+    <div class="kw-hero-box">
+        <div class="kw-hero-box-content">
+            <p class="kw-label mb-3">Florist · Event Decorations</p>
+            <h1 class="kw-hero-title">
+                Flowers crafted<br>
+                <em>with heart</em>
+            </h1>
+            <p class="kw-hero-text">
+                Bespoke bouquets, wedding and event decorations,
+                prop hire. Every arrangement is made by hand —
+                with care for every detail.
+            </p>
+            <div class="kw-hero-cta">
+                <a href="/shop" class="kw-btn-white">Browse the shop</a>
+                <a href="#contact" class="kw-btn-outline-white">Contact us</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ═══════════════════════════════════════════════════════════
+   SECTION 2 — WHY US
+   ═══════════════════════════════════════════════════════════ *@
+<section class="kw-section kw-section-cream">
+    <div class="container">
+        <div class="kw-section-header">
+            <p class="kw-label">Why choose us</p>
+            <h2 class="kw-script" style="font-size:2.2rem; color:var(--kw-warm-dark);">A passion for flowers</h2>
+        </div>
+        <div class="row g-4 justify-content-center">
+            <div class="col-6 col-md-3 text-center">
+                <div class="kw-feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+                </div>
+                <h5 class="kw-feature-title">Made with love</h5>
+                <p class="kw-feature-text">Every bouquet is created individually, with care for each stem and ribbon.</p>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="kw-feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                </div>
+                <h5 class="kw-feature-title">Family run</h5>
+                <p class="kw-feature-text">Run by Sophie and James — we know our flowers and we know our customers.</p>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="kw-feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <h5 class="kw-feature-title">5-star rated</h5>
+                <p class="kw-feature-text">Rated 5.0 on Google based on reviews from our happy customers.</p>
+            </div>
+            <div class="col-6 col-md-3 text-center">
+                <div class="kw-feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h5 class="kw-feature-title">Quick turnaround</h5>
+                <p class="kw-feature-text">We can often prepare a bouquet same day — call us and ask.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ═══════════════════════════════════════════════════════════
+   SECTION 3 — OFFER
+   ═══════════════════════════════════════════════════════════ *@
+<section class="kw-section">
+    <div class="container">
+        <div class="kw-section-header">
+            <p class="kw-label">What we offer</p>
+            <h2 class="kw-script" style="font-size:2.2rem; color:var(--kw-warm-dark);">Our services</h2>
+        </div>
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <div class="kw-offer-card">
+                    <div class="kw-offer-photo" style="background-image:url('/images/bukiety.jpg');">
+                        <span class="kw-offer-label">Online shop</span>
+                    </div>
+                    <div class="kw-offer-body">
+                        <h3 class="kw-offer-title">Bouquets</h3>
+                        <p class="kw-offer-text">
+                            Arrangements for every occasion — weddings, birthdays, thank-yous,
+                            and condolences. Order online and collect in store.
+                        </p>
+                        <a href="/shop" class="kw-offer-link">
+                            Browse the catalogue
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="kw-offer-card">
+                    <div class="kw-offer-photo" style="background-image:url('/images/dekoracje.jpg');">
+                        <span class="kw-offer-label">Bespoke</span>
+                    </div>
+                    <div class="kw-offer-body">
+                        <h3 class="kw-offer-title">Decorations</h3>
+                        <p class="kw-offer-text">
+                            Wedding, celebration, and event styling. Church, reception venue,
+                            balloon walls, floral arches — all designed with imagination.
+                        </p>
+                        <a href="/decorations" class="kw-offer-link">
+                            Send an enquiry
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="kw-offer-card">
+                    <div class="kw-offer-photo" style="background-image:url('/images/rekwizyty.jpg');">
+                        <span class="kw-offer-label">Hire</span>
+                    </div>
+                    <div class="kw-offer-body">
+                        <h3 class="kw-offer-title">Prop Hire</h3>
+                        <p class="kw-offer-text">
+                            Vases, candlesticks, floral arches, lanterns, stands —
+                            props for weddings and celebrations.
+                        </p>
+                        <a href="/rental" class="kw-offer-link">
+                            Browse props
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@* ═══════════════════════════════════════════════════════════
+   SECTION 4 — ABOUT US
+   ═══════════════════════════════════════════════════════════ *@
+<section class="kw-section kw-section-cream" id="about">
+    <div class="container">
+        <div class="row g-5 align-items-center">
+
+            @* Photos *@
+            <div class="col-md-5">
+                <div class="kw-about-photos">
+                    <img src="/images/ewelina.jpg"
+                         alt="Sophie — owner"
+                         class="kw-about-photo-main" />
+                    <img src="/images/przemek.jpg"
+                         alt="James with a bouquet"
+                         class="kw-about-photo-accent" />
+                </div>
+            </div>
+
+            @* Text *@
+            <div class="col-md-7">
+                <p class="kw-label mb-2">Meet us</p>
+                <h2 class="kw-script mb-4" style="font-size:2.2rem; color:var(--kw-warm-dark);">
+                    Sophie and James
+                </h2>
+                <p class="kw-about-text">
+                    We are a family-run florist in Bristol, driven by a genuine passion for flowers.
+                    Sophie designs and creates all the bouquets and decorations — every arrangement is
+                    composed with imagination and attention to detail. James handles the logistics
+                    and is always on hand to deliver flowers with a smile.
+                </p>
+                <p class="kw-about-text">
+                    Together we have created a place where every customer is treated as an individual.
+                    We specialise in wedding and event decorations, but take equal delight in putting
+                    together a birthday bouquet, an anniversary arrangement, or simply flowers for no
+                    particular reason at all.
+                </p>
+                <div class="kw-about-rating mt-4">
+                    <span class="kw-stars">★★★★★</span>
+                    <span class="kw-about-rating-text">5.0 · Reviews on Google</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@* ═══════════════════════════════════════════════════════════
+   SECTION 5 — REVIEWS
+   ═══════════════════════════════════════════════════════════ *@
+<section class="kw-section">
+    <div class="container">
+        <div class="kw-section-header">
+            <p class="kw-label">What our customers say</p>
+            <h2 class="kw-script" style="font-size:2.2rem; color:var(--kw-warm-dark);">Google Reviews</h2>
+        </div>
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <div class="kw-review-card">
+                    <div class="kw-review-header">
+                        <div class="kw-review-avatar" style="background:#C4A0A6;">EH</div>
+                        <div>
+                            <p class="kw-review-name">Emily H</p>
+                            <span class="kw-stars-sm">★★★★★</span>
+                        </div>
+                    </div>
+                    <p class="kw-review-text">
+                        "Absolutely stunning balloon wall for my daughter's 18th birthday.
+                        Sophie created something truly magical — everyone was in awe.
+                        Wonderful service from start to finish."
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="kw-review-card">
+                    <div class="kw-review-header">
+                        <div class="kw-review-avatar" style="background:#8FAD82;">AW</div>
+                        <div>
+                            <p class="kw-review-name">Anna W</p>
+                            <span class="kw-stars-sm">★★★★★</span>
+                        </div>
+                    </div>
+                    <p class="kw-review-text">
+                        "Highly recommend the wedding decorations by Sophie!
+                        Both the church and the reception venue looked breathtaking —
+                        every single detail was perfect."
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="kw-review-card">
+                    <div class="kw-review-header">
+                        <div class="kw-review-avatar" style="background:#B0A88A;">SJ</div>
+                        <div>
+                            <p class="kw-review-name">Sarah J</p>
+                            <span class="kw-stars-sm">★★★★★</span>
+                        </div>
+                    </div>
+                    <p class="kw-review-text">
+                        "We wholeheartedly recommend Petal &amp; Bloom for wedding and event
+                        decorations. Sophie is a pleasure to work with —
+                        attentive, creative, and thoroughly professional."
+                    </p>
+                </div>
+            </div>
+
+        </div>
+        <div class="text-center mt-4">
+            <a href="https://www.google.com/maps/place/Petal+and+Bloom+Florist+Bristol"
+               target="_blank" rel="noopener" class="kw-more-reviews">
+                See all reviews on Google →
+            </a>
+        </div>
+    </div>
+</section>
+
+@* ═══════════════════════════════════════════════════════════
+   SECTION 6 — CONTACT
+   ═══════════════════════════════════════════════════════════ *@
+<section class="kw-section kw-section-cream" id="contact">
+    <div class="container">
+        <div class="kw-section-header">
+            <p class="kw-label">Find us</p>
+            <h2 class="kw-script" style="font-size:2.2rem; color:var(--kw-warm-dark);">Contact &amp; Directions</h2>
+        </div>
+        <div class="row g-5 align-items-start">
+
+            <div class="col-md-4">
+                <ul class="kw-contact-list">
+                    <li>
+                        <svg class="kw-contact-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <div>
+                            <strong>Address</strong>
+                            <span>12 Floral Street<br />Bristol BS1 2AB</span>
+                        </div>
+                    </li>
+                    <li>
+                        <svg class="kw-contact-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.5 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <div>
+                            <strong>Phone</strong>
+                            <a href="tel:+441174960320">+44 117 496 0320</a>
+                        </div>
+                    </li>
+                    <li>
+                        <svg class="kw-contact-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <div>
+                            <strong>Hours</strong>
+                            <span>Mon – Fri &nbsp; 8:30 – 17:00<br />Saturday &nbsp; 9:00 – 14:00<br />Sunday &nbsp;&nbsp;&nbsp; Closed</span>
+                        </div>
+                    </li>
+                    <li>
+                        <svg class="kw-contact-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        <div>
+                            <strong>Instagram</strong>
+                            <a href="https://www.instagram.com/petalandbloom/"
+                               target="_blank" rel="noopener">@@petalandbloom</a>
+                        </div>
+                    </li>
+                    <li>
+                        <svg class="kw-contact-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                        <div>
+                            <strong>Facebook</strong>
+                            <a href="https://www.facebook.com/petalandbloomflorist"
+                               target="_blank" rel="noopener">Petal &amp; Bloom</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-md-8">
+                <div class="kw-map-wrap">
+                    <iframe
+                        src="https://maps.google.com/maps?q=Floral+Street,+Bristol+BS1+2AB&output=embed&hl=en"
+                        width="100%"
+                        height="380"
+                        style="border:0; border-radius:4px;"
+                        allowfullscreen
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        title="Map — Petal &amp; Bloom, 12 Floral Street, Bristol">
+                    </iframe>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@* ═══════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════ *@
+<footer class="kw-footer">
+    <div class="container">
+        <div class="kw-footer-inner">
+            <span class="kw-script" style="font-size:1.3rem; color:#C4A0A6;">Petal &amp; Bloom</span>
+            <div class="kw-footer-links">
+                <a href="/shop">Shop</a>
+                <a href="/rental">Rental</a>
+                <a href="/decorations">Decorations</a>
+                <a href="/gallery">Gallery</a>
+            </div>
+            <span class="kw-footer-copy">© 2026 Adrian Malik</span>
+        </div>
+    </div>
+</footer>

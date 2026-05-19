@@ -1,0 +1,109 @@
+@page "/admin/decorations"
+@attribute [Authorize]
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Decoration.Models
+@inject AdminDecorationService AdminDecoration
+
+<PageTitle>Decoration Enquiries - Admin</PageTitle>
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin" class="btn btn-outline-secondary btn-sm">← Admin</a>
+        <h1 class="h4 mb-0">Decoration Enquiries</h1>
+        <span class="badge bg-secondary">@_inquiries.Count łącznie</span>
+    </div>
+
+    @if (_inquiries.Count == 0)
+    {
+        <div class="alert alert-info">
+            No enquiries. Pojawią się tutaj, gdy klient wypełni formularz na stronie.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Number</th>
+                        <th>Customer</th>
+                        <th>Wydarzenie</th>
+                        <th>Date eventu</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in _inquiries)
+                    {
+                        <tr>
+                            <td><code class="text-primary fw-semibold">@i.InquiryNumber</code></td>
+                            <td>
+                                <div>@i.CustomerName</div>
+                                <div class="small text-muted">@i.CustomerPhone</div>
+                            </td>
+                            <td>@EventTypeLabel(i.EventType)</td>
+                            <td class="text-nowrap">@i.EventDate.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="badge @StatusBadgeClass(i.Status)">
+                                    @StatusLabel(i.Status)
+                                </span>
+                            </td>
+                            <td class="text-muted small text-nowrap">
+                                @i.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </td>
+                            <td>
+                                <a href="admin/decorations/@i.Id" class="btn btn-sm btn-outline-primary">
+                                    Details →
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>
+
+@code {
+    private List<DecorationInquiry> _inquiries = [];
+
+    protected override async Task OnInitializedAsync()
+        => _inquiries = await AdminDecoration.GetAllInquiriesAsync();
+
+    private static string EventTypeLabel(DecorationEventType t) => t switch
+    {
+        DecorationEventType.Wedding     => "Ślub / wesele",
+        DecorationEventType.Church      => "Uroczystość kościelna",
+        DecorationEventType.Anniversary => "Rocznica / jubileusz",
+        DecorationEventType.Funeral     => "Pogrzeb",
+        _                               => "Inne"
+    };
+
+    private static string StatusBadgeClass(DecorationInquiryStatus s) => s switch
+    {
+        DecorationInquiryStatus.New        => "bg-warning text-dark",
+        DecorationInquiryStatus.InQuoting  => "bg-info text-dark",
+        DecorationInquiryStatus.QuoteSent  => "bg-primary",
+        DecorationInquiryStatus.Accepted   => "bg-success",
+        DecorationInquiryStatus.Rejected   => "bg-danger",
+        DecorationInquiryStatus.Completed  => "bg-success",
+        DecorationInquiryStatus.Cancelled  => "bg-secondary",
+        _                                  => "bg-secondary"
+    };
+
+    private static string StatusLabel(DecorationInquiryStatus s) => s switch
+    {
+        DecorationInquiryStatus.New        => "New",
+        DecorationInquiryStatus.InQuoting  => "Quote w toku",
+        DecorationInquiryStatus.QuoteSent  => "Quote wysłana",
+        DecorationInquiryStatus.Accepted   => "Zaakceptowane",
+        DecorationInquiryStatus.Rejected   => "Odrzucone",
+        DecorationInquiryStatus.Completed  => "Completed",
+        DecorationInquiryStatus.Cancelled  => "Cancelled",
+        _                                  => s.ToString()
+    };
+}

@@ -1,0 +1,64 @@
+# Stack deweloperski dla "Petal & Bloom".
+# Uruchamia PostgreSQL + pgAdmin w kontenerach. Aplikacja .NET pracuje na hoście (dotnet run).
+#
+# Najczęstsze komendy:
+#   docker compose up -d              # uruchomienie w tle
+#   docker compose ps                 # lista uruchomionych kontenerów
+#   docker compose logs -f postgres   # logi Postgresa na żywo (Ctrl+C wychodzi)
+#   docker compose stop               # zatrzymanie (kontenery zostają)
+#   docker compose down               # zatrzymanie + usunięcie kontenerów (dane w wolumenach zostają)
+#   docker compose down -v            # j.w. + USUWA wolumeny (baza wyczyszczona)
+#
+# UWAGA: hasła w tym pliku są przeznaczone TYLKO do lokalnego developmentu.
+# Do produkcji zrobimy osobny docker-compose.prod.yml czytający z .env (poza repo).
+
+# Jawna nazwa projektu Compose — niezależna od nazwy folderu (która ma spacje/znaki PL).
+# Bez tego Docker Desktop pokazałby coś typu "kwiaciarniafloristshop".
+name: klimaty
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: klimaty-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: klimaty_dev
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: dev-password-change-in-prod
+      # Wymuszamy UTF-8 przy inicjalizacji bazy (locale C = szybkie sortowanie ASCII)
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # host:container — aplikacja .NET na hoście łączy się przez localhost:5432
+      - "5432:5432"
+    volumes:
+      # Trwałe składowanie danych — przeżywa 'docker compose down'
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # pgAdmin czeka aż Postgres będzie gotowy — to zapobiega błędom "connection refused"
+      test: ["CMD-SHELL", "pg_isready -U app -d klimaty_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: klimaty-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      # Wyłączamy server mode — w local dev jeden użytkownik, bez ceremonii
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
+volumes:
+  pgdata:
+  pgadmin-data:

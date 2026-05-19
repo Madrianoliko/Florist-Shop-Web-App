@@ -1,0 +1,303 @@
+@page "/admin/gallery"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using FloristShop.Web.Infrastructure
+@using FloristShop.Web.Modules.Dictionary.Models
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Gallery.Models
+@using FloristShop.Web.Modules.Gallery.Services
+@inject GalleryService GallerySvc
+@inject DictionaryService DictSvc
+@inject FileUploadService FileUpload
+@inject IJSRuntime JS
+
+<PageTitle>Gallery - Admin</PageTitle>
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin" class="btn btn-outline-secondary btn-sm">← Admin Panel</a>
+        <h1 class="h4 mb-0">Gallery</h1>
+    </div>
+
+    @* ── Formularz dodawania ─────────────────────────────────────────── *@
+    <div class="card mb-5">
+        <div class="card-header fw-semibold">Add zdjęcie realizacji</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                    <select class="form-select" @bind="_newCategory">
+                        @foreach (var cat in _galleryCategories)
+                        {
+                            <option value="@cat.Key">@cat.Label</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Title (opcjonalny)</label>
+                    <input class="form-control" @bind="_newTitle" placeholder="np. Wesele w plenerze" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Sort order</label>
+                    <input type="number" class="form-control" @bind="_newOrder" min="0" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Zdjęcie <span class="text-danger">*</span></label>
+                    <InputFile OnChange="HandleUploadAsync" accept=".jpg,.jpeg,.png,.webp" class="form-control" />
+                    <div class="form-text">JPG, PNG, WebP — max 8 MB.</div>
+                </div>
+            </div>
+
+            @if (_uploading)
+            {
+                <div class="mt-2 text-muted small">
+                    <span class="spinner-border spinner-border-sm me-1"></span> Wgrywanie i zapisywanie...
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(_uploadError))
+            {
+                <div class="alert alert-danger py-2 mt-2 small">@_uploadError</div>
+            }
+            @if (_uploadSuccess)
+            {
+                <div class="alert alert-success py-2 mt-2 small">✓ Zdjęcie dodane do galerii.</div>
+            }
+        </div>
+    </div>
+
+    @* ── Lista zdjęć ──────────────────────────────────────────────────── *@
+    @if (_photos.Count == 0)
+    {
+        <div class="alert alert-info">No photos w galerii. Add pierwsze powyżej.</div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var photo in _photos)
+            {
+                <div class="col-md-4 col-lg-3">
+                    <div class="card h-100 @(photo.IsActive ? "" : "opacity-50")">
+                        <img src="@photo.ImagePath" alt="@photo.Title"
+                             class="card-img-top"
+                             style="height:150px;object-fit:cover;" />
+                        <div class="card-body p-2">
+                            @if (!string.IsNullOrWhiteSpace(photo.Title))
+                            {
+                                <div class="small fw-semibold">@photo.Title</div>
+                            }
+                            <div class="small text-muted">@CategoryLabel(photo.Category) · poz. @photo.DisplayOrder</div>
+                            <div class="d-flex gap-1 mt-2">
+                                <button class="btn btn-outline-warning btn-sm flex-grow-1"
+                                        @onclick="() => ToggleActive(photo)">
+                                    @(photo.IsActive ? "Ukryj" : "Pokaż")
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm"
+                                        @onclick="() => DeletePhoto(photo)">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@* ── Modal kadrowania zdjęcia galerii ────────────────────────── *@
+@if (_showCropModal)
+{
+    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,0.65);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Kadrowanie zdjęcia</h5>
+                    <button type="button" class="btn-close" @onclick="AbortCropAsync"></button>
+                </div>
+                <div class="modal-body p-0" style="max-height:65vh;overflow:hidden;background:#222;">
+                    <img id="gal-crop-image" style="display:block;max-width:100%;" alt="" />
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">Przeciągnij ramkę żeby wybrać obszar</small>
+                    <button type="button" class="btn btn-outline-secondary"
+                            @onclick="AbortCropAsync" disabled="@_cropping">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-outline-primary"
+                            @onclick="SkipCropAsync" disabled="@_cropping">
+                        Pomiń kadrowanie
+                    </button>
+                    <button type="button" class="btn btn-primary"
+                            @onclick="ApplyCropAsync" disabled="@_cropping">
+                        @if (_cropping)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Zastosuj kadrowanie
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<GalleryPhoto> _photos = [];
+    private List<DictionaryEntry> _galleryCategories = [];
+    private Dictionary<string, string> _labelMap = [];
+
+    private string _newCategory = string.Empty;
+    private string? _newTitle;
+    private int _newOrder;
+    private bool _uploading;
+    private bool _uploadSuccess;
+    private string? _uploadError;
+
+    // Crop modal
+    private IBrowserFile? _pendingFile;
+    private bool _showCropModal;
+    private bool _cropping;
+    private (string ImgId, string DateUrl, double? AspectRatio)? _pendingCropInit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _galleryCategories = await DictSvc.GetActiveAsync(DictionaryService.Types.GalleryCategory);
+        _labelMap = _galleryCategories.ToDictionary(e => e.Key, e => e.Label);
+        if (_galleryCategories.Count > 0)
+            _newCategory = _galleryCategories[0].Key;
+        _photos = await GallerySvc.GetAllAsync();
+    }
+
+    private async Task HandleUploadAsync(InputFileChangeEventArgs e)
+    {
+        _uploading = true;
+        _uploadSuccess = false;
+        _uploadError = null;
+        _pendingFile = e.File;
+
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 8 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            var mime = string.IsNullOrEmpty(e.File.ContentType) ? "image/jpeg" : e.File.ContentType;
+            var dataUrl = $"data:{mime};base64,{base64}";
+
+            _showCropModal = true;
+            _pendingCropInit = ("gal-crop-image", dataUrl, 4.0 / 3.0); // 4:3 poziomy
+        }
+        catch (Exception ex)
+        {
+            _uploadError = ex.Message;
+            _uploading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingCropInit.HasValue)
+        {
+            var (imgId, dataUrl, aspectRatio) = _pendingCropInit.Value;
+            _pendingCropInit = null;
+            await JS.InvokeVoidAsync("initCropper", imgId, dataUrl, aspectRatio);
+        }
+    }
+
+    private async Task ApplyCropAsync()
+    {
+        _cropping = true;
+        try
+        {
+            var croppedDateUrl = await JS.InvokeAsync<string?>("getCroppedDateUrl");
+            if (croppedDateUrl is null) return;
+
+            var commaIdx = croppedDateUrl.IndexOf(',');
+            var base64Date = commaIdx >= 0 ? croppedDateUrl[(commaIdx + 1)..] : croppedDateUrl;
+            var bytes = Convert.FromBase64String(base64Date);
+
+            var ext = _pendingFile?.Name != null
+                ? Path.GetExtension(_pendingFile.Name).ToLowerInvariant()
+                : ".jpg";
+            if (ext == ".jpeg") ext = ".jpg";
+
+            var path = await FileUpload.SaveBytesAsync(bytes, "gallery", ext);
+            await GallerySvc.CreateAsync(path, _newCategory, _newTitle, null, _newOrder);
+            _uploadSuccess = true;
+            _newTitle = null;
+            _newOrder = 0;
+            _photos = await GallerySvc.GetAllAsync();
+
+            await JS.InvokeVoidAsync("destroyCropper");
+            _showCropModal = false;
+            _pendingFile = null;
+        }
+        catch (Exception ex)
+        {
+            _uploadError = $"Błąd kadrowania: {ex.Message}";
+            _showCropModal = false;
+        }
+        finally
+        {
+            _cropping = false;
+            _uploading = false;
+        }
+    }
+
+    private async Task SkipCropAsync()
+    {
+        _cropping = true;
+        try
+        {
+            if (_pendingFile is not null)
+            {
+                var path = await FileUpload.SaveAsync(_pendingFile, "gallery");
+                await GallerySvc.CreateAsync(path, _newCategory, _newTitle, null, _newOrder);
+                _uploadSuccess = true;
+                _newTitle = null;
+                _newOrder = 0;
+                _photos = await GallerySvc.GetAllAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _uploadError = $"Błąd zapisu: {ex.Message}";
+        }
+        finally
+        {
+            _cropping = false;
+            _uploading = false;
+        }
+        await JS.InvokeVoidAsync("destroyCropper");
+        _showCropModal = false;
+        _pendingFile = null;
+    }
+
+    private async Task AbortCropAsync()
+    {
+        await JS.InvokeVoidAsync("destroyCropper");
+        _showCropModal = false;
+        _uploading = false;
+        _pendingFile = null;
+    }
+
+    private async Task ToggleActive(GalleryPhoto photo)
+    {
+        await GallerySvc.UpdateAsync(photo.Id, photo.Category, photo.Title, photo.Description,
+            photo.DisplayOrder, !photo.IsActive);
+        _photos = await GallerySvc.GetAllAsync();
+    }
+
+    private async Task DeletePhoto(GalleryPhoto photo)
+    {
+        FileUpload.Delete(photo.ImagePath);
+        await GallerySvc.DeleteAsync(photo.Id);
+        _photos = await GallerySvc.GetAllAsync();
+    }
+
+    private string CategoryLabel(string key) =>
+        _labelMap.TryGetValue(key, out var label) ? label : key;
+}

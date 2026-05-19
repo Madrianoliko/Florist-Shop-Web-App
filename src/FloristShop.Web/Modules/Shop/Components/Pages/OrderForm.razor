@@ -1,0 +1,182 @@
+@page "/shop/order"
+@using System.Globalization
+@using FloristShop.Web.Modules.Shop.Models
+@using FloristShop.Web.Modules.Shop.Services
+@inject BouquetCatalogService Catalog
+@inject OrderService OrderSvc
+@inject NavigationManager Nav
+
+@*
+    Bouquet order form — SSR, POST-Redirect-GET pattern.
+    Optional query string ?templateId=... pre-selects a bouquet from the catalogue.
+*@
+
+<PageTitle>Order a Bouquet - Petal &amp; Bloom</PageTitle>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="shop">Shop</a></li>
+                    <li class="breadcrumb-item active">Order</li>
+                </ol>
+            </nav>
+
+            <h1 class="h3 mb-1">Order a Bouquet</h1>
+            <p class="text-muted mb-4">Fill in the form — we will get in touch to confirm the details.</p>
+
+            <EditForm Model="@_form"
+                      OnValidSubmit="HandleSubmitAsync"
+                      method="post"
+                      FormName="order">
+                <DataAnnotationsValidator />
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Selected bouquet</div>
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Bouquet <span class="text-danger">*</span></label>
+                            <InputSelect class="form-select" @bind-Value="_form.TemplateId">
+                                <option value="">— choose from catalogue —</option>
+                                @foreach (var t in _templates)
+                                {
+                                    <option value="@t.Id">
+                                        @t.Name — @t.BasePrice.ToString("C", GbCulture)
+                                    </option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _form.TemplateId)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-1">
+                            <label class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
+                            <InputNumber class="form-control" style="max-width: 120px;"
+                                         @bind-Value="_form.Quantity" min="1" max="50" />
+                            <ValidationMessage For="@(() => _form.Quantity)" class="text-danger small" />
+                        </div>
+
+                        <div class="form-text mt-2">
+                            Prices shown in the catalogue are base prices. The exact amount will be confirmed by our team.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Contact details</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Full name <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_form.CustomerName"
+                                       placeholder="e.g. Jane Smith" />
+                            <ValidationMessage For="@(() => _form.CustomerName)" class="text-danger small" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email address <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_form.CustomerEmail"
+                                       placeholder="jane@example.com" />
+                            <ValidationMessage For="@(() => _form.CustomerEmail)" class="text-danger small" />
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label fw-semibold">Phone <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_form.CustomerPhone"
+                                       placeholder="e.g. 07700 900 123" />
+                            <ValidationMessage For="@(() => _form.CustomerPhone)" class="text-danger small" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Delivery &amp; date</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Collection / delivery <span class="text-danger">*</span></label>
+                            <InputSelect class="form-select" @bind-Value="_form.DeliveryMethod">
+                                <option value="@DeliveryMethod.Pickup">Collect in store (free)</option>
+                                <option value="@DeliveryMethod.LocalDelivery">Local delivery — £5</option>
+                                <option value="@DeliveryMethod.Courier">Courier — £10</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _form.DeliveryMethod)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Delivery address</label>
+                            <InputText class="form-control" @bind-Value="_form.DeliveryAddress"
+                                       placeholder="Street, number, city (required for delivery)" />
+                            <ValidationMessage For="@(() => _form.DeliveryAddress)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-1">
+                            <label class="form-label fw-semibold">Fulfilment date <span class="text-danger">*</span></label>
+                            <InputDate class="form-control" style="max-width: 220px;"
+                                       @bind-Value="_form.DeliveryDate" />
+                            <div class="form-text">When do you need the bouquet? We typically fulfil orders within 1–2 working days.</div>
+                            <ValidationMessage For="@(() => _form.DeliveryDate)" class="text-danger small" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">Special requests</div>
+                    <div class="card-body">
+                        <InputTextArea class="form-control" @bind-Value="_form.CustomerNote"
+                                       rows="3"
+                                       placeholder="e.g. 'Please avoid lilies — allergy', 'Card: Happy Birthday Mum', colour preferences, size, other requests..." />
+                        <div class="form-text">Optional. We'll do our best to honour every request.</div>
+                    </div>
+                </div>
+
+                <ValidationSummary class="alert alert-danger" />
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        Place order →
+                    </button>
+                </div>
+                <p class="text-muted small text-center mt-3">
+                    After placing your order you will receive a tracking number to check its status.
+                    Payment by cash or bank transfer — details will be agreed by phone.
+                </p>
+            </EditForm>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "order")]
+    private OrderFormModel _form { get; set; } = new();
+
+    [SupplyParameterFromQuery(Name = "templateId")]
+    private Guid? PreselectedTemplateId { get; set; }
+
+    private List<BouquetTemplate> _templates = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _templates = await Catalog.GetActiveCatalogAsync();
+
+        if (HttpContext.Request.Method == "GET")
+        {
+            _form = new OrderFormModel
+            {
+                TemplateId   = PreselectedTemplateId,
+                Quantity     = 1,
+                DeliveryDate = DateOnly.FromDateTime(DateTime.Today.AddDays(3))
+            };
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        var orderNumber = await OrderSvc.CreateOrderAsync(_form);
+        Nav.NavigateTo($"/shop/order/confirmation/{Uri.EscapeDataString(orderNumber)}");
+    }
+}

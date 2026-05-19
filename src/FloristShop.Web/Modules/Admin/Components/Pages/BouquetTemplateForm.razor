@@ -1,0 +1,433 @@
+@page "/admin/catalogue/bouquets/new"
+@page "/admin/catalogue/bouquets/{Id:guid}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@*
+    Strona dodawania/edycji szablonu bukietu.
+
+    DLACZEGO @rendermode InteractiveServer?
+    Komponent InputFile (upload zdjęć) wymaga JavaScript i WebSocket —
+    nie działa w czystym SSR. Reszta admina jest SSR, ale strony edycji
+    katalogu muszą być interaktywne ze względu na upload plików.
+
+    Konsekwencje:
+    1. No HttpContext (available only during prerendering, then null).
+       PRG pattern nie jest potrzebny — używamy stanu komponentu (_saved, _error).
+    2. DbContext jest scoped do lifetime komponentu — OK dla krótkiej sesji edycji.
+    3. Wymaga podłączonego SignalR — tylko dla admina, więc overhead jest pomijalny.
+*@
+
+@using System.Globalization
+@using FloristShop.Web.Infrastructure
+@using FloristShop.Web.Modules.Admin.Models
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Dictionary.Models
+@using FloristShop.Web.Modules.Dictionary.Services
+@using FloristShop.Web.Modules.Shop.Models
+@inject AdminBouquetCatalogService CatalogSvc
+@inject DictionaryService DictSvc
+@inject FileUploadService FileUpload
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@(_isNew ? "Nowy bukiet" : "Edit bukiet") - Admin</PageTitle>
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin/catalogue/bouquets" class="btn btn-outline-secondary btn-sm">← List bukietów</a>
+        <h1 class="h4 mb-0">@(_isNew ? "Nowy szablon bukietu" : $"Edit: {_form.Name}")</h1>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header fw-semibold">Dane bukietu</div>
+                <div class="card-body">
+                    <EditForm Model="@_form" OnValidSubmit="HandleSaveAsync">
+                        <DateAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="_form.Name"
+                                       placeholder="np. Pastelowy zachwyt" />
+                            <ValidationMessage For="@(() => _form.Name)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description</label>
+                            <InputTextArea class="form-control" @bind-Value="_form.Description"
+                                           rows="3"
+                                           placeholder="Krótki opis widoczny w katalogu dla klientów." />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label fw-semibold">Price bazowa (zł) <span class="text-danger">*</span></label>
+                                <InputNumber class="form-control" @bind-Value="_form.BasePrice"
+                                             placeholder="np. 120" min="0.01" />
+                                <ValidationMessage For="@(() => _form.BasePrice)" class="text-danger small" />
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <InputSelect class="form-select" @bind-Value="_form.Category">
+                                    @foreach (var cat in _categories)
+                                    {
+                                        <option value="@cat.Key">@cat.Label</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="_form.IsActive" id="isActive" />
+                                <label class="form-check-label" for="isActive">
+                                    Widoczny w katalogu
+                                </label>
+                            </div>
+                            <div class="form-text">Odznacz żeby tymczasowo ukryć bukiet bez usuwania.</div>
+                        </div>
+
+                        @if (_saved)
+                        {
+                            <div class="alert alert-success py-2 mb-3">✓ Zapisano pomyślnie.</div>
+                        }
+                        @if (!string.IsNullOrEmpty(_saveError))
+                        {
+                            <div class="alert alert-danger py-2 mb-3">@_saveError</div>
+                        }
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" disabled="@_saving">
+                                @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Save
+                            </button>
+                            <a href="admin/catalogue/bouquets" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header fw-semibold">Photos</div>
+                <div class="card-body">
+
+                    @* Aktualne zdjęcia *@
+                    @if (_imagePaths.Count > 0)
+                    {
+                        <div class="row g-2 mb-3">
+                            @foreach (var path in _imagePaths.ToList())
+                            {
+                                <div class="col-6 position-relative">
+                                    <img src="@path" alt="zdjęcie bukietu"
+                                         class="img-fluid rounded"
+                                         style="width:100%;height:120px;object-fit:cover;" />
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 py-0 px-1"
+                                            @onclick="() => RemovePhoto(path)"
+                                            title="Delete zdjęcie">
+                                        ✕
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-3">No photos. Add zdjęcia poniżej.</p>
+                    }
+
+                    @* Upload new *@
+                    <label class="form-label fw-semibold">Add zdjęcia</label>
+                    <InputFile OnChange="HandlePhotoUpload"
+                               accept=".jpg,.jpeg,.png,.webp"
+                               multiple
+                               class="form-control mb-2" />
+                    <div class="form-text">JPG, PNG, WebP — max 8 MB każde. Możesz dodać kilka naraz.</div>
+
+                    @if (_uploading)
+                    {
+                        <div class="mt-2 text-muted small">
+                            <span class="spinner-border spinner-border-sm me-1"></span> Wgrywanie...
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_uploadError))
+                    {
+                        <div class="alert alert-danger py-2 mt-2 small">@_uploadError</div>
+                    }
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@* ── Modal kadrowania zdjęcia ─────────────────────────────── *@
+@if (_showCropModal)
+{
+    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,0.65);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Kadrowanie zdjęcia</h5>
+                    <button type="button" class="btn-close" @onclick="AbortAllCropAsync"></button>
+                </div>
+                <div class="modal-body p-0" style="max-height:65vh;overflow:hidden;background:#222;">
+                    <img id="kw-crop-image" style="display:block;max-width:100%;" alt="" />
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">Przeciągnij ramkę żeby wybrać obszar</small>
+                    <button type="button" class="btn btn-outline-secondary"
+                            @onclick="AbortAllCropAsync" disabled="@_cropping"
+                            title="Cancel dodawanie wszystkich zdjęć">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-outline-primary"
+                            @onclick="SkipCropAsync" disabled="@_cropping">
+                        Pomiń kadrowanie
+                    </button>
+                    <button type="button" class="btn btn-primary"
+                            @onclick="ApplyCropAsync" disabled="@_cropping">
+                        @if (_cropping)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Zastosuj kadrowanie
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private BouquetTemplateFormModel _form = new();
+    private List<string> _imagePaths = [];
+    private List<DictionaryEntry> _categories = [];
+
+    private bool _isNew => !Id.HasValue;
+    private bool _saving;
+    private bool _saved;
+    private string? _saveError;
+    private bool _uploading;
+    private string? _uploadError;
+
+    // Crop modal
+    private Queue<IBrowserFile> _pendingFiles = new();
+    private IBrowserFile? _currentCropFile;
+    private bool _showCropModal;
+    private bool _cropping;
+    private (string ImgId, string DateUrl, double? AspectRatio)? _pendingCropInit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await DictSvc.GetActiveAsync(DictionaryService.Types.BouquetCategory);
+
+        if (!_isNew)
+        {
+            var template = await CatalogSvc.GetByIdAsync(Id!.Value);
+            if (template is null)
+            {
+                Nav.NavigateTo("/admin/catalogue/bouquets");
+                return;
+            }
+            _form = new BouquetTemplateFormModel
+            {
+                Name        = template.Name,
+                Description = template.Description,
+                BasePrice   = template.BasePrice,
+                Category    = template.Category,
+                IsActive    = template.IsActive
+            };
+            _imagePaths = [..template.ImagePaths];
+        }
+        else if (_categories.Count > 0)
+        {
+            _form.Category = _categories[0].Key;
+        }
+    }
+
+    private async Task HandleSaveAsync()
+    {
+        _saving = true;
+        _saved = false;
+        _saveError = null;
+
+        try
+        {
+            if (_isNew)
+            {
+                var newId = await CatalogSvc.CreateAsync(
+                    _form.Name, _form.Description, _form.BasePrice,
+                    _form.Category, _form.IsActive, _imagePaths);
+                Nav.NavigateTo($"/admin/catalogue/bouquets/{newId}");
+            }
+            else
+            {
+                await CatalogSvc.UpdateAsync(
+                    Id!.Value, _form.Name, _form.Description, _form.BasePrice,
+                    _form.Category, _form.IsActive, _imagePaths);
+                _saved = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _saveError = $"Błąd zapisu: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task HandlePhotoUpload(InputFileChangeEventArgs e)
+    {
+        _uploading = true;
+        _uploadError = null;
+        _pendingFiles = new Queue<IBrowserFile>(e.GetMultipleFiles(10));
+        await ProcessNextPendingFileAsync();
+    }
+
+    private async Task ProcessNextPendingFileAsync()
+    {
+        if (!_pendingFiles.TryDequeue(out var file))
+        {
+            _uploading = false;
+            return;
+        }
+
+        _currentCropFile = file;
+
+        try
+        {
+            // Wczytaj plik jako base64 → data URL → przekaż do Cropper.js
+            await using var stream = file.OpenReadStream(maxAllowedSize: 8 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+            var base64 = Convert.ToBase64String(bytes);
+            var mime = string.IsNullOrEmpty(file.ContentType) ? "image/jpeg" : file.ContentType;
+            var dataUrl = $"data:{mime};base64,{base64}";
+
+            _showCropModal = true;
+            // Ustaw flagę — cropper zostanie zainicjowany w OnAfterRenderAsync
+            _pendingCropInit = ("kw-crop-image", dataUrl, 0.75); // 3:4 pionowy
+        }
+        catch (Exception ex)
+        {
+            _uploadError = $"Błąd odczytu pliku: {ex.Message}";
+            _uploading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingCropInit.HasValue)
+        {
+            var (imgId, dataUrl, aspectRatio) = _pendingCropInit.Value;
+            _pendingCropInit = null;
+            await JS.InvokeVoidAsync("initCropper", imgId, dataUrl, aspectRatio);
+        }
+    }
+
+    private async Task ApplyCropAsync()
+    {
+        _cropping = true;
+        try
+        {
+            var croppedDateUrl = await JS.InvokeAsync<string?>("getCroppedDateUrl");
+            if (croppedDateUrl is null)
+            {
+                _uploadError = "Nie udało się pobrać skropu.";
+                return;
+            }
+
+            // Dekoduj base64 z data URL
+            var commaIdx = croppedDateUrl.IndexOf(',');
+            var base64Date = commaIdx >= 0 ? croppedDateUrl[(commaIdx + 1)..] : croppedDateUrl;
+            var imageBytes = Convert.FromBase64String(base64Date);
+
+            var ext = _currentCropFile?.Name != null
+                ? Path.GetExtension(_currentCropFile.Name).ToLowerInvariant()
+                : ".jpg";
+            if (ext == ".jpeg") ext = ".jpg";
+
+            var path = await FileUpload.SaveBytesAsync(imageBytes, "bouquets", ext);
+            _imagePaths.Add(path);
+
+            await JS.InvokeVoidAsync("destroyCropper");
+            _showCropModal = false;
+            _currentCropFile = null;
+
+            // Kontynuuj kolejne pliki z kolejki
+            await ProcessNextPendingFileAsync();
+        }
+        catch (Exception ex)
+        {
+            _uploadError = $"Błąd kadrowania: {ex.Message}";
+            _showCropModal = false;
+            _uploading = false;
+        }
+        finally
+        {
+            _cropping = false;
+        }
+    }
+
+    /// <summary>
+    /// Pomiń kadrowanie — zapisz oryginalne zdjęcie bez przycinania i przejdź do następnego.
+    /// </summary>
+    private async Task SkipCropAsync()
+    {
+        _cropping = true;
+        try
+        {
+            if (_currentCropFile is not null)
+            {
+                var path = await FileUpload.SaveAsync(_currentCropFile, "bouquets");
+                _imagePaths.Add(path);
+            }
+        }
+        catch (Exception ex)
+        {
+            _uploadError = $"Błąd zapisu: {ex.Message}";
+        }
+        finally
+        {
+            _cropping = false;
+        }
+
+        await JS.InvokeVoidAsync("destroyCropper");
+        _showCropModal = false;
+        _currentCropFile = null;
+
+        await ProcessNextPendingFileAsync();
+    }
+
+    /// <summary>
+    /// Cancel — porzuć wszystkie pozostałe pliki z kolejki bez zapisywania.
+    /// </summary>
+    private async Task AbortAllCropAsync()
+    {
+        await JS.InvokeVoidAsync("destroyCropper");
+        _showCropModal = false;
+        _pendingFiles.Clear();
+        _uploading = false;
+        _currentCropFile = null;
+    }
+
+    private void RemovePhoto(string path)
+    {
+        FileUpload.Delete(path);
+        _imagePaths.Remove(path);
+    }
+
+}

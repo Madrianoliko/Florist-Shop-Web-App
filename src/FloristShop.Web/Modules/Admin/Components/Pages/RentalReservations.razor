@@ -1,0 +1,106 @@
+@page "/admin/reservations"
+@attribute [Authorize]
+@using FloristShop.Web.Modules.Admin.Services
+@using FloristShop.Web.Modules.Rental.Models
+@inject AdminRentalService AdminRental
+
+@*
+    Lista wszystkich rezerwacji wypożyczalni — tabela z filtrem po statusie.
+    Czysty SSR — każde wejście pobiera świeże dane z bazy.
+*@
+
+<PageTitle>Rental Reservations - Admin</PageTitle>
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="admin" class="btn btn-outline-secondary btn-sm">← Admin</a>
+        <h1 class="h4 mb-0">Rental Reservations</h1>
+        <span class="badge bg-secondary">@_reservations.Count łącznie</span>
+    </div>
+
+    @if (_reservations.Count == 0)
+    {
+        <div class="alert alert-info">
+            No reservations. Kiedy klient wypełni formularz na stronie, pojawią się tutaj.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Number</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _reservations)
+                    {
+                        <tr>
+                            <td>
+                                <code class="text-primary fw-semibold">@r.ReservationNumber</code>
+                            </td>
+                            <td>
+                                <div>@r.CustomerName</div>
+                                <div class="small text-muted">@r.CustomerPhone</div>
+                            </td>
+                            <td class="text-nowrap">
+                                @r.StartDate.ToString("dd/MM/yyyy") – @r.EndDate.ToString("dd/MM/yyyy")
+                            </td>
+                            <td>
+                                <span class="badge @StatusBadgeClass(r.Status)">
+                                    @StatusLabel(r.Status)
+                                </span>
+                            </td>
+                            <td class="text-muted small text-nowrap">
+                                @r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </td>
+                            <td>
+                                <a href="admin/reservations/@r.Id" class="btn btn-sm btn-outline-primary">
+                                    Details →
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>
+
+@code {
+    private List<RentalReservation> _reservations = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reservations = await AdminRental.GetAllReservationsAsync();
+    }
+
+    // Kolory badge Bootstrap dopasowane do cyklu życia rezerwacji
+    private static string StatusBadgeClass(RentalReservationStatus status) => status switch
+    {
+        RentalReservationStatus.Pending   => "bg-warning text-dark",
+        RentalReservationStatus.Confirmed => "bg-info text-dark",
+        RentalReservationStatus.Issued    => "bg-primary",
+        RentalReservationStatus.Returned  => "bg-success",
+        RentalReservationStatus.Cancelled => "bg-danger",
+        _                                 => "bg-secondary"
+    };
+
+    private static string StatusLabel(RentalReservationStatus status) => status switch
+    {
+        RentalReservationStatus.Pending   => "Oczekuje",
+        RentalReservationStatus.Confirmed => "Potwierdzona",
+        RentalReservationStatus.Issued    => "Wydana",
+        RentalReservationStatus.Returned  => "Zwrócona",
+        RentalReservationStatus.Cancelled => "Anulowana",
+        _                                 => status.ToString()
+    };
+}

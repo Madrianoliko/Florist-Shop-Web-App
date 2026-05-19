@@ -1,0 +1,33 @@
+@page "/logout"
+@using FloristShop.Web.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<AppUser> SignInManager
+@inject NavigationManager Navigation
+
+@*
+    Logout as POST — per HTTP semantics, state-changing actions
+    (like SignOut) should use POST, not GET. Otherwise e.g. a browser prefetcher
+    could log the user out merely by hovering over the link.
+*@
+
+<PageTitle>Log Out - Petal &amp; Bloom</PageTitle>
+
+<h1>Log Out</h1>
+
+<EditForm method="post" Model="@_dummyModel" OnValidSubmit="HandleLogout" FormName="logout">
+    <p>Are you sure you want to log out?</p>
+
+    <button type="submit" class="btn btn-danger">Yes, log out</button>
+    <a href="/" class="btn btn-secondary ms-2">Cancel</a>
+</EditForm>
+
+@code {
+    // EditForm requires a non-null Model. For a form with no data — empty object as placeholder.
+    private readonly object _dummyModel = new();
+
+    private async Task HandleLogout()
+    {
+        await SignInManager.SignOutAsync();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

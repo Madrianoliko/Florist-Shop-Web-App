@@ -1,0 +1,173 @@
+/* ============================================================
+   Klimaty na kwiaty — design system
+   ============================================================ */
+
+:root {
+    --kw-rose:        #C4A0A6;
+    --kw-rose-light:  #EFE5E6;
+    --kw-rose-dark:   #A07880;
+    --kw-cream:       #FAF7F4;
+    --kw-cream-mid:   #F5F0EB;
+    --kw-warm-dark:   #3A3230;
+    --kw-muted:       #8A807C;
+    --kw-border:      #EDE8E3;
+    --kw-green:       #8FAD82;
+    --kw-green-light: #E6EDE3;
+    --kw-serif:       'Playfair Display', Georgia, serif;
+    --kw-script:      'Cormorant Garamond', Georgia, serif;
+}
+
+/* === Base === */
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    color: #3A3230;
+    background: #FFFFFF;
+    scroll-behavior: smooth;
+}
+
+a {
+    color: var(--kw-rose-dark);
+}
+
+a:hover {
+    color: var(--kw-rose);
+}
+
+/* === Typography helpers === */
+.kw-serif  { font-family: var(--kw-serif); }
+.kw-script { font-family: var(--kw-script); font-style: italic; font-weight: 300; }
+.kw-label  {
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--kw-rose);
+    font-family: -apple-system, sans-serif;
+}
+
+/* === Buttons === */
+.btn-primary {
+    background-color: var(--kw-rose);
+    border-color: var(--kw-rose);
+    color: #fff;
+    font-size: 0.8rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.6rem 1.5rem;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--kw-rose-dark);
+    border-color: var(--kw-rose-dark);
+    color: #fff;
+}
+
+.btn-outline-primary {
+    color: var(--kw-rose);
+    border-color: var(--kw-rose);
+    font-size: 0.8rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.6rem 1.5rem;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--kw-rose);
+    border-color: var(--kw-rose);
+    color: #fff;
+}
+
+.btn-delete {
+    color: #B05C5C;
+    border: 1px solid #D4A0A0;
+    background: transparent;
+    font-size: 0.8rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    padding: 0.6rem 1.5rem;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-delete:hover, .btn-delete:focus {
+    background-color: #C47878;
+    border-color: #C47878;
+    color: #fff;
+}
+
+/* === Sections === */
+.kw-section {
+    padding: 5rem 1.5rem;
+}
+
+.kw-section-cream {
+    background: var(--kw-cream);
+}
+
+.kw-section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.kw-section-header h2 {
+    font-family: var(--kw-script);
+    font-size: 2.4rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--kw-warm-dark);
+    margin: 0.4rem 0 0;
+}
+
+/* === Forms (admin) === */
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus,
+.form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--kw-rose);
+}
+
+.content {
+    padding-top: 1.1rem;
+}
+
+h1:focus {
+    outline: none;
+}
+
+/* === Validation (admin forms) === */
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid #e50000;
+}
+
+.validation-message {
+    color: #e50000;
+}
+
+/* === Blazor error boundary === */
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
+
+.darker-border-checkbox.form-check-input {
+    border-color: #929292;
+}
+
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
