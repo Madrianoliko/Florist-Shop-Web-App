@@ -237,7 +237,7 @@
         }
         catch (Exception ex)
         {
-            _uploadError = $"Błąd kadrowania: {ex.Message}";
+            _uploadError = $"Crop error: {ex.Message}";
             _showCropModal = false;
         }
         finally
@@ -264,7 +264,7 @@
         }
         catch (Exception ex)
         {
-            _uploadError = $"Błąd zapisu: {ex.Message}";
+            _uploadError = $"Save error: {ex.Message}";
         }
         finally
         {

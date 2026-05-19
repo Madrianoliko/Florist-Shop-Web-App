@@ -31,7 +31,7 @@
                 <div class="card-header fw-semibold">Dane rekwizytu</div>
                 <div class="card-body">
                     <EditForm Model="@_form" OnValidSubmit="HandleSaveAsync">
-                        <DateAnnotationsValidator />
+                        <DataAnnotationsValidator />
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
@@ -84,7 +84,7 @@
 
                         @if (_saved)
                         {
-                            <div class="alert alert-success py-2 mb-3">✓ Zapisano pomyślnie.</div>
+                            <div class="alert alert-success py-2 mb-3">✓ Saved successfully.</div>
                         }
                         @if (!string.IsNullOrEmpty(_saveError))
                         {
@@ -225,7 +225,7 @@
         }
         catch (Exception ex)
         {
-            _saveError = $"Błąd zapisu: {ex.Message}";
+            _saveError = $"Save error: {ex.Message}";
         }
         finally
         {

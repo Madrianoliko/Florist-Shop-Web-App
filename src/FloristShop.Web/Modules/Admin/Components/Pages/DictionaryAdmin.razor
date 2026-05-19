@@ -68,7 +68,7 @@
                             <tr class="table-warning">
                                 <td colspan="5">
                                     <EditForm Model="@_editForm" OnValidSubmit="SaveEditAsync" class="d-flex gap-2 align-items-end flex-wrap p-2">
-                                        <DateAnnotationsValidator />
+                                        <DataAnnotationsValidator />
                                         <div>
                                             <label class="form-label small fw-semibold mb-1">Label</label>
                                             <InputText class="form-control form-control-sm" @bind-Value="_editForm.Label" style="min-width:180px;" />
@@ -98,7 +98,7 @@
         <div class="card-header fw-semibold">Add nowy wpis</div>
         <div class="card-body">
             <EditForm Model="@_addForm" OnValidSubmit="AddEntryAsync">
-                <DateAnnotationsValidator />
+                <DataAnnotationsValidator />
                 <div class="row g-3 align-items-end">
                     <div class="col-sm-3">
                         <label class="form-label fw-semibold">Key (Key) <span class="text-danger">*</span></label>
@@ -197,14 +197,14 @@
         catch (Exception ex)
         {
             _addError = ex.Message.Contains("unique") || ex.Message.Contains("duplicate")
-                ? $"Key '{_addForm.Key}' już istnieje w tym słowniku."
-                : $"Błąd: {ex.Message}";
+                ? $"Key '{_addForm.Key}' already exists in this dictionary."
+                : $"Error: {ex.Message}";
         }
     }
 
     private class EditFormModel
     {
-        [System.ComponentModel.DateAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.Required]
         public string Label { get; set; } = string.Empty;
         public int SortOrder { get; set; }
         public bool IsActive { get; set; } = true;
@@ -212,12 +212,12 @@
 
     private class AddFormModel
     {
-        [System.ComponentModel.DateAnnotations.Required(ErrorMessage = "Podaj klucz.")]
-        [System.ComponentModel.DateAnnotations.MaxLength(100)]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Key is required.")]
+        [System.ComponentModel.DataAnnotations.MaxLength(100)]
         public string Key { get; set; } = string.Empty;
 
-        [System.ComponentModel.DateAnnotations.Required(ErrorMessage = "Podaj etykietę.")]
-        [System.ComponentModel.DateAnnotations.MaxLength(200)]
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Label is required.")]
+        [System.ComponentModel.DataAnnotations.MaxLength(200)]
         public string Label { get; set; } = string.Empty;
 
         public int SortOrder { get; set; }
