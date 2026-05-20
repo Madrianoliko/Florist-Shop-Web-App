@@ -1,18 +1,19 @@
 /* ============================================================
-   Klimaty na kwiaty — design system
+   Petal & Bloom — design system
+   Palette: sage green + warm gold
    ============================================================ */
 
 :root {
-    --kw-rose:        #C4A0A6;
-    --kw-rose-light:  #EFE5E6;
-    --kw-rose-dark:   #A07880;
-    --kw-cream:       #FAF7F4;
-    --kw-cream-mid:   #F5F0EB;
-    --kw-warm-dark:   #3A3230;
-    --kw-muted:       #8A807C;
-    --kw-border:      #EDE8E3;
-    --kw-green:       #8FAD82;
-    --kw-green-light: #E6EDE3;
+    --kw-rose:        #7A9E7E;   /* sage green — primary */
+    --kw-rose-light:  #E4EDE5;   /* sage tint */
+    --kw-rose-dark:   #5A7D5E;   /* deep sage */
+    --kw-cream:       #F8F6F1;   /* warm off-white */
+    --kw-cream-mid:   #F1EDE4;   /* warm cream */
+    --kw-warm-dark:   #2E3428;   /* dark forest */
+    --kw-muted:       #7A7D72;   /* muted sage-grey */
+    --kw-border:      #DDE5DE;   /* soft sage border */
+    --kw-green:       #C9A84C;   /* warm gold — accent */
+    --kw-green-light: #F5EDD4;   /* gold tint */
     --kw-serif:       'Playfair Display', Georgia, serif;
     --kw-script:      'Cormorant Garamond', Georgia, serif;
 }
@@ -20,7 +21,7 @@
 /* === Base === */
 html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    color: #3A3230;
+    color: #2E3428;
     background: #FFFFFF;
     scroll-behavior: smooth;
 }

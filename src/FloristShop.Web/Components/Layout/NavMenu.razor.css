@@ -4,7 +4,7 @@
 
 .kw-navbar {
     background: #FFFFFF;
-    border-bottom: 1px solid #EDE8E3;
+    border-bottom: 1px solid #DDE5DE;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -68,16 +68,16 @@
 }
 
 ::deep .kw-nav-link:hover {
-    color: #3A3230;
-    background: #FAF7F4;
+    color: #2E3428;
+    background: #F8F6F1;
 }
 
 ::deep .kw-nav-link.active {
-    color: #C4A0A6;
+    color: #7A9E7E;
 }
 
 ::deep .kw-nav-link-admin {
-    color: #8FAD82;
+    color: #C9A84C;
     border: 1px solid #D5E3D1;
 }
 
@@ -102,7 +102,7 @@
     height: 36px;
     padding: 6px;
     background: none;
-    border: 1px solid #EDE8E3;
+    border: 1px solid #DDE5DE;
     border-radius: 4px;
     cursor: pointer;
 }
@@ -117,7 +117,7 @@
 
 /* === Mobile menu === */
 .kw-mobile-nav {
-    border-top: 1px solid #EDE8E3;
+    border-top: 1px solid #DDE5DE;
     background: #FFFFFF;
 }
 
@@ -145,5 +145,5 @@
 
 ::deep .kw-mobile-link:hover,
 ::deep .kw-mobile-link.active {
-    color: #C4A0A6;
+    color: #7A9E7E;
 }
